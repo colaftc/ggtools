@@ -60,6 +60,35 @@ def qr_rebuild():
         return resp
 
 
+@app.route('/exp/info', methods=['POST'])
+def exp_info():
+    exp_type = request.values.get('type', 'auto')
+    exp_code = request.values.get('number', '')
+    secret = request.values.get('secret', '')
+
+    if secret != 'ggadmin5197':
+        return jsonify({
+            'errMsg': 'forbiden'
+        }), 403
+
+    exp_api_url = 'https://api.jisuapi.com/express/query'
+    exp_appkey = '78dfa54445483038'
+    res = requests.post(exp_api_url, data={
+        'type': exp_type,
+        'number': exp_code,
+        'appkey': exp_appkey,
+    })
+    if res.status_code == 200:
+        result = res.json()
+    else:
+        return jsonify({
+            'errMsg' : 'result not found',
+        }), 404
+
+    print(result)
+    return jsonify(result)
+
+
 # TODO : write transport info query here...
 
 if __name__ == '__main__':
