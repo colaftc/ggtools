@@ -1,12 +1,81 @@
 #! /usr/bin/env python3
 
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
 from PIL import Image, ImageDraw, ImageFont
 import requests
 import pyzbar.pyzbar as pyzbar
 import qrcode
+from celery import Celery
+from flask_mail import Mail, Message
+import os
 
-app = Flask(__name__)
+
+flask_app = Flask(__name__)
+flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
+flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
+flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
+flask_app.config['result_backend'] = 'redis://www.rechatun.com:6899/0'
+flask_app.config['accept_content'] = ['pickle', 'json']
+flask_app.config['result_serializer'] = 'pickle'
+
+celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
+celery.conf.update(flask_app.config)
+
+# Flask-Mail configuration
+flask_app.config['MAIL_SERVER'] = 'smtp.126.com'
+flask_app.config['MAIL_PORT'] = 25
+flask_app.config['MAIL_USE_TLS'] = True
+flask_app.config['MAIL_USERNAME'] = 'colaftc'
+flask_app.config['MAIL_PASSWORD'] = 'QKRIUAMMLHGGYEGB'
+flask_app.config['MAIL_DEFAULT_SENDER'] = 'colaftc@126.com'
+
+mail = Mail(flask_app)
+
+@celery.task
+def test_task():
+    with open('./testing.dat', 'w+', encoding='utf-8') as f:
+        f.write(flask_app.config['SECRET_KEY'])
+
+
+@celery.task
+def send_mail_async(content: str, subject: str, to: str, mailer: Mail = mail) -> None:
+    msg = Message(subject, sender=flask_app.config['MAIL_DEFAULT_SENDER'], recipients=[to])
+    msg.body = content
+
+    with flask_app.app_context():
+        mailer.send(msg)
+
+
+@flask_app.route('/mail', methods=['GET', 'POST'])
+def mail():
+    if request.method == 'GET':
+        return render_template('mail.html', email=session.get('email', ''))
+
+    email = request.form['email']
+    session['email'] = email
+
+    # send the email
+    email_data = {
+        'subject': 'Hello from Flask',
+        'to': email,
+        'body': 'This is a test email sent from a background Celery task.'
+    }
+    if request.form['submit'] == 'Send':
+        # send right away
+        send_mail_async.apply_async(args=[email_data['body'], email_data['subject'], email_data['to']])
+        flash('Sending email to {0}'.format(email))
+    else:
+        # send in one minute
+        send_mail_async.apply_async(args=[email_data['body'], email_data['subject'], email_data['to']], countdown=60)
+        flash('An email will be sent to {0} in one minute'.format(email))
+
+    return redirect(url_for('mail'))
+
+
+@flask_app.route('/celery', methods=['GET', 'POST'])
+def tests():
+    task = test_task.apply_async(countdown=20)
+    return 'ok'
 
 
 def decode_qrcode(url: str, filename: str = 'temp.jpg') -> str:
@@ -18,8 +87,8 @@ def decode_qrcode(url: str, filename: str = 'temp.jpg') -> str:
         return code
 
 
-@app.route('/qr/decode', methods=['POST'])
-def qr_decode() :
+@flask_app.route('/qr/decode', methods=['POST'])
+def qr_decode():
     url = request.values.get('url', '')
     print(url)
     if url == '':
@@ -31,7 +100,7 @@ def qr_decode() :
     })
 
 
-@app.route('/qr/rebuild', methods=['POST'])
+@flask_app.route('/qr/rebuild', methods=['POST'])
 def qr_rebuild():
     try:
         url = request.values['url']
@@ -60,7 +129,7 @@ def qr_rebuild():
         return resp
 
 
-@app.route('/exp/info', methods=['POST'])
+@flask_app.route('/exp/info', methods=['POST'])
 def exp_info():
     exp_type = request.values.get('type', 'auto')
     exp_code = request.values.get('number', '')
@@ -82,7 +151,7 @@ def exp_info():
         result = res.json()
     else:
         return jsonify({
-            'errMsg' : 'result not found',
+            'errMsg': 'result not found',
         }), 404
 
     print(result)
@@ -92,4 +161,4 @@ def exp_info():
 # TODO : write transport info query here...
 
 if __name__ == '__main__':
-    app.run(port=8000)
+    flask_app.run(port=8000)
