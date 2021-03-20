@@ -46,6 +46,25 @@ def send_mail_async(content: str, subject: str, to: str, mailer: Mail = mail) ->
         mailer.send(msg)
 
 
+@flask_app.before_request
+def before_request(*args, **kwargs):
+    if request.path == '/login':
+        return None
+
+    user = request.cookies.get('user', None)
+    if user is not None:
+        return None
+    return redirect('/login')
+
+
+@flask_app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html', form=request.form)
+    else:
+        raise NotImplementedError('未写好')
+
+
 @flask_app.route('/mail', methods=['GET', 'POST'])
 def mail():
     if request.method == 'GET':
