@@ -161,7 +161,14 @@ def before_request(*args, **kwargs):
         return None
 
     request.user = None
-    return redirect('/login')
+    return redirect(url_for('login'))
+
+
+@flask_app.route('/sms-callback', methods=['GET', 'POST'])
+def sms_callback():
+    json = request.json
+    print(json)
+    return 'ok'
 
 
 @flask_app.route('/login', methods=['GET', 'POST'])
