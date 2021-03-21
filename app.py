@@ -34,6 +34,10 @@ class ReverseProxied:
         if scheme:
             environ['wsgi.url_scheme'] = scheme
 
+        print(f'script_name: {environ["SCRIPT_NAME"]}')
+        print(f'scheme: {scheme}')
+        print(f'x_forwarded: {x_forwarded_for}')
+
         return self.app(environ, start_response)
 
 
