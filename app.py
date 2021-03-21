@@ -29,6 +29,7 @@ class ReverseProxied:
 
         if host:
             environ['HOST'] = host
+            print(f'x_forwarded: {host}')
 
         if script_name:
             environ['SCRIPT_NAME'] = script_name
@@ -39,7 +40,6 @@ class ReverseProxied:
 
         print(f'script_name: {environ["SCRIPT_NAME"]}')
         print(f'scheme: {scheme}')
-        print(f'x_forwarded: {x_forwarded_for}')
         print(f'x_forwarded: {x_forwarded_for}')
 
         return self.app(environ, start_response)
