@@ -27,6 +27,7 @@ class ReverseProxied:
         if script_name:
             environ['SCRIPT_NAME'] = script_name
             path_info = environ['PATH_INFO']
+            print(f'Old Path info: {path_info}')
             if path_info.startswith(script_name):
                 environ['PATH_INFO'] = path_info[len(script_name):]
 
@@ -37,6 +38,7 @@ class ReverseProxied:
         print(f'script_name: {environ["SCRIPT_NAME"]}')
         print(f'scheme: {scheme}')
         print(f'x_forwarded: {x_forwarded_for}')
+        print(f'new Path info: {path_info}')
 
         return self.app(environ, start_response)
 
