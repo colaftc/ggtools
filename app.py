@@ -26,21 +26,22 @@ class ReverseProxied:
         script_name = environ.get('HTTP_X_FORWARDED_PREFIX', '')
         x_forwarded_for = environ.get('HTTP_X_FORWARDED_FOR', '')
         host = environ.get('HTTP_X_FORWARDED_HOST', '')
+        scheme = environ.get('HTTP_X_FORWARDED_PROTO', '')
 
         if host:
-            environ['HOST'] = host
-            print(f'x_forwarded: {host}')
+            environ['HTTP_HOST'] = host
+            print(f'host: {host}')
 
         if script_name:
             environ['SCRIPT_NAME'] = script_name
+            print(f'script_name: {environ["SCRIPT_NAME"]}')
 
-        scheme = environ.get('HTTP_X_FORWARDED_PROTO', '')
         if scheme:
             environ['wsgi.url_scheme'] = scheme
+            print(f'scheme: {scheme}')
 
-        print(f'script_name: {environ["SCRIPT_NAME"]}')
-        print(f'scheme: {scheme}')
-        print(f'x_forwarded: {x_forwarded_for}')
+        if x_forwarded_for:
+            print(f'x_forwarded_for: {x_forwarded_for}')
 
         return self.app(environ, start_response)
 
