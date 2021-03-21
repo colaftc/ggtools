@@ -17,7 +17,18 @@ from tencentcloud.sms.v20190711 import sms_client, models
 import os
 
 
+class ReverseProxied:
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        print(f'Proxied script-name : {environ.get("HTTP_X_SCRIPT_NAME", "")}')
+        print(f'Proxied x-forwarded-for : {environ.get("HTTP_X_FORWARDED_FOR", "")}')
+        return self.app(environ, start_response)
+
+
 flask_app = Flask(__name__)
+flask_app.wsgi_app = ReverseProxied(flask_app.wsgi_app)
 flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
