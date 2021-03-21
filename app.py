@@ -1,12 +1,19 @@
 #! /usr/bin/env python3
-
+from typing import List, Any
 from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
 from PIL import Image, ImageDraw, ImageFont
+from collections import namedtuple
 import requests
 import pyzbar.pyzbar as pyzbar
 import qrcode
 from celery import Celery
 from flask_mail import Mail, Message
+from blueprints import sms_app
+from flask_pymongo import PyMongo
+# tencent cloud sdk
+from tencentcloud.common import credential
+from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
+from tencentcloud.sms.v20190711 import sms_client, models
 import os
 
 
@@ -14,12 +21,20 @@ flask_app = Flask(__name__)
 flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
+flask_app.config['MONGODB_URI'] = 'mongodb://localhost/sms'
 flask_app.config['result_backend'] = 'redis://www.rechatun.com:6899/0'
 flask_app.config['accept_content'] = ['pickle', 'json']
 flask_app.config['result_serializer'] = 'pickle'
 
+
 celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
 celery.conf.update(flask_app.config)
+mongo = PyMongo(flask_app, uri=flask_app.config['MONGODB_URI'])
+
+# sms settings
+flask_app.config['TX_APPID'] = 'AKID6PSFl0LRt4zYy8MYpKZXEepjMifNobCP'
+flask_app.config['TX_APPSECRET'] = '6bcMs64ylHWVMxITOcgV7crqY0LSJgx4'
+flask_app.config['SMS_SDKAPPID'] = '1400491233'
 
 # Flask-Mail configuration
 flask_app.config['MAIL_SERVER'] = 'smtp.126.com'
@@ -29,12 +44,70 @@ flask_app.config['MAIL_USERNAME'] = 'colaftc'
 flask_app.config['MAIL_PASSWORD'] = 'QKRIUAMMLHGGYEGB'
 flask_app.config['MAIL_DEFAULT_SENDER'] = 'colaftc@126.com'
 
+flask_app.register_blueprint(sms_app)
+
 mail = Mail(flask_app)
+g_no_check_list = [
+    '/login',
+    '/mail',
+    '/exp/info',
+    '/qr/decode',
+    '/qr/rebuild',
+    '/celery',
+]
+
+
+SentClient = namedtuple('SentClient', ['client_name', 'client_number'])
+
+
+def init_tx_credential():
+    return credential.Credential(secretId=flask_app.config['TX_APPID'], secretKey=flask_app.config['TX_APPSECRET'])
+
+
+def save_sent_sms(sent_list: List[SentClient], err=None):
+    if err is not None:
+        print('发送出错不作记录')
+        return
+
+    with flask_app.app_context():
+        mongo.db.sms.insert_many([{
+            'client_name': v['client_name'],
+            'client_number': v['client_number'],
+        } for v in sent_list])
+
 
 @celery.task
-def test_task():
-    with open('./testing.dat', 'w+', encoding='utf-8') as f:
-        f.write(flask_app.config['SECRET_KEY'])
+def send_sms_task(numbers: List[SentClient], sign: str = '浩轩陈皮', template_id='881535'):
+    req = prepare_send_sms(template_id, sign)
+    send_sms(numbers, req)
+
+
+def prepare_send_sms(template_id='881535', sign: str = '浩轩陈皮') -> models.SendSmsRequest:
+    req = models.SendSmsRequest()
+    req.SmsSdkAppid = flask_app.config['SMS_SDKAPPID']
+    req.Sign = sign
+    req.TemplateID = template_id
+    return req
+
+
+def parse_client_list():
+    # TODO: make this complete
+    pass
+
+
+def send_sms(numbers: List[SentClient], req: models.SendSmsRequest, after_send_func=None):
+    client = sms_client.SmsClient(init_tx_credential(), 'ap-guangzhou')
+    req.PhoneNumberSet = numbers
+    error = None
+    try:
+        resp = client.SendSms(req)
+        return resp.to_json_string()
+    except TencentCloudSDKException as err:
+        error = err
+        print(err)
+    finally:
+        if after_send_func is not None:
+            after_send_func(numbers=numbers, err=error)
 
 
 @celery.task
@@ -48,12 +121,15 @@ def send_mail_async(content: str, subject: str, to: str, mailer: Mail = mail) ->
 
 @flask_app.before_request
 def before_request(*args, **kwargs):
-    if request.path == '/login':
+    if request.path in g_no_check_list:
         return None
 
-    user = request.cookies.get('user', None)
+    user = session.get('user')
     if user is not None:
+        request.user = user
         return None
+
+    request.user = None
     return redirect('/login')
 
 
@@ -62,7 +138,27 @@ def login():
     if request.method == 'GET':
         return render_template('login.html', form=request.form)
     else:
-        raise NotImplementedError('未写好')
+        username = request.form.get('username')
+        pwd = request.form.get('password')
+        if username == 'ggadmin' and pwd == 'GG_20200401':
+            resp = make_response('<html></html>', 301)
+            session['user'] = {
+                'username': 'ggadmin',
+                'role': 'admin',
+            }
+            resp.headers['content-type'] = 'text/plain'
+            resp.headers['location'] = url_for('sms.index')
+            flash('登录成功')
+            return resp
+        else:
+            return render_template('login.html')
+
+
+@flask_app.route('/logout', methods=['GET'])
+def logout():
+    session.pop('user')
+    request.user = None
+    return redirect(url_for('login'))
 
 
 @flask_app.route('/mail', methods=['GET', 'POST'])
@@ -89,12 +185,6 @@ def mail():
         flash('An email will be sent to {0} in one minute'.format(email))
 
     return redirect(url_for('mail'))
-
-
-@flask_app.route('/celery', methods=['GET', 'POST'])
-def tests():
-    task = test_task.apply_async(countdown=20)
-    return 'ok'
 
 
 def decode_qrcode(url: str, filename: str = 'temp.jpg') -> str:
@@ -176,8 +266,6 @@ def exp_info():
     print(result)
     return jsonify(result)
 
-
-# TODO : write transport info query here...
 
 if __name__ == '__main__':
     flask_app.run(port=8000)
