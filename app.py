@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
-from typing import List, Any
+from typing import List
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
 from PIL import Image, ImageDraw, ImageFont
 from collections import namedtuple
@@ -17,34 +18,34 @@ from tencentcloud.sms.v20190711 import sms_client, models
 import os
 
 
-class ReverseProxied:
-    def __init__(self, app):
-        self.app = app
-
-    def __call__(self, environ, start_response):
-        script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
-        x_forwarded_for = environ.get('HTTP_X_FORWARDED_FOR', '')
-        if script_name:
-            environ['SCRIPT_NAME'] = script_name
-            path_info = environ['PATH_INFO']
-            print(f'Old Path info: {path_info}')
-            if path_info.startswith(script_name):
-                environ['PATH_INFO'] = path_info[len(script_name):]
-
-        scheme = environ.get('HTTP_X_SCHEME', '')
-        if scheme:
-            environ['wsgi.url_scheme'] = scheme
-
-        print(f'script_name: {environ["SCRIPT_NAME"]}')
-        print(f'scheme: {scheme}')
-        print(f'x_forwarded: {x_forwarded_for}')
-        print(f'new Path info: {path_info}')
-
-        return self.app(environ, start_response)
+# class ReverseProxied:
+#     def __init__(self, app):
+#         self.app = app
+#
+#     def __call__(self, environ, start_response):
+#         script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
+#         x_forwarded_for = environ.get('HTTP_X_FORWARDED_FOR', '')
+#         if script_name:
+#             environ['SCRIPT_NAME'] = script_name
+#             path_info = environ['PATH_INFO']
+#             print(f'Old Path info: {path_info}')
+#             if path_info.startswith(script_name):
+#                 environ['PATH_INFO'] = path_info[len(script_name):]
+#
+#         scheme = environ.get('HTTP_X_SCHEME', '')
+#         if scheme:
+#             environ['wsgi.url_scheme'] = scheme
+#
+#         print(f'script_name: {environ["SCRIPT_NAME"]}')
+#         print(f'scheme: {scheme}')
+#         print(f'x_forwarded: {x_forwarded_for}')
+#         print(f'new Path info: {path_info}')
+#
+#         return self.app(environ, start_response)
 
 
 flask_app = Flask(__name__)
-flask_app.wsgi_app = ReverseProxied(flask_app.wsgi_app)
+flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_host=1, x_prefix=1)
 flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
