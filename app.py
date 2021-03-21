@@ -85,6 +85,7 @@ g_no_check_list = [
     '/qr/decode',
     '/qr/rebuild',
     '/celery',
+    '/sms-callback',
 ]
 
 
