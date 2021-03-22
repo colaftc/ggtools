@@ -49,7 +49,7 @@ flask_app.wsgi_app = ReverseProxied(flask_app.wsgi_app)
 flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
-flask_app.config['MONGODB_URI'] = 'mongodb://localhost/sms'
+flask_app.config['MONGODB_URI'] = 'mongodb://colaftc:fcp0520@localhost:27017/agent'
 flask_app.config['result_backend'] = 'redis://www.rechatun.com:6899/0'
 flask_app.config['accept_content'] = ['pickle', 'json']
 flask_app.config['result_serializer'] = 'pickle'
@@ -167,10 +167,26 @@ def before_request(*args, **kwargs):
 
 @flask_app.route('/sms-callback', methods=['GET', 'POST'])
 def sms_callback():
+    # json example
+    # [{'mobile': '15215221290', 'report_status': 'SUCCESS', 'description': '用户短信接收成功', 'errmsg': 'DELIVRD',
+    #   'user_receive_time': '2021-03-22 14:10:53' '2034:03221042101042831562207829460731', 'nationcode': '86'}]
+
     print('sms-callback')
     json = request.json
-    print(json)
-    return 'ok'
+
+    result = [{
+        'mobile': j['mobile'],
+        'status': j['report_status'],
+        'desc': j['description'],
+        'errmsg': j['errmsg'],
+        'receive_at': j['user_receive_time'],
+    } for j in json]
+
+    try:
+        mongo.db.sms_result.insert_many(result)
+    except Exception as e:
+        print(f'sms-callback save not ok : {e}')
+    return ''
 
 
 @flask_app.route('/login', methods=['GET', 'POST'])
