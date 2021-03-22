@@ -2,6 +2,7 @@
 from typing import List
 from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
 from PIL import Image, ImageDraw, ImageFont
+from pymongo.cursor import Cursor
 import requests
 import pyzbar.pyzbar as pyzbar
 import qrcode
@@ -171,22 +172,32 @@ def sms_callback():
     # [{'mobile': '15215221290', 'report_status': 'SUCCESS', 'description': '用户短信接收成功', 'errmsg': 'DELIVRD',
     #   'user_receive_time': '2021-03-22 14:10:53' '2034:03221042101042831562207829460731', 'nationcode': '86'}]
 
-    print('sms-callback')
-    json = request.json
+    if request.method == 'GET':
+        result: Cursor = mongo.db.sms_result.find()
+        return {'data': [{
+            'mobile': r['mobile'],
+            'status': r['status'],
+            'errmsg': r['errmsg'],
+            'desc': r['desc'],
+            'receive_at': r['receive_at'],
+        } for r in result]} if result.count() > 0 else 'None'
+    else:
+        print('sms-callback')
+        json = request.json
 
-    result = [{
-        'mobile': j['mobile'],
-        'status': j['report_status'],
-        'desc': j['description'],
-        'errmsg': j['errmsg'],
-        'receive_at': j['user_receive_time'],
-    } for j in json]
+        result = [{
+            'mobile': j['mobile'],
+            'status': j['report_status'],
+            'desc': j['description'],
+            'errmsg': j['errmsg'],
+            'receive_at': j['user_receive_time'],
+        } for j in json]
 
-    try:
-        mongo.db.sms_result.insert_many(result)
-    except Exception as e:
-        print(f'sms-callback save not ok : {e}')
-    return ''
+        try:
+            mongo.db.sms_result.insert_many(result)
+        except Exception as e:
+            print(f'sms-callback save not ok : {e}')
+        return ''
 
 
 @flask_app.route('/login', methods=['GET', 'POST'])
