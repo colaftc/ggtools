@@ -167,6 +167,7 @@ def before_request(*args, **kwargs):
 
 @flask_app.route('/sms-callback', methods=['GET', 'POST'])
 def sms_callback():
+    print('sms-callback')
     json = request.json
     print(json)
     return 'ok'
