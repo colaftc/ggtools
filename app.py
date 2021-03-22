@@ -1,15 +1,13 @@
 #! /usr/bin/env python3
 from typing import List
-from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
 from PIL import Image, ImageDraw, ImageFont
-from collections import namedtuple
 import requests
 import pyzbar.pyzbar as pyzbar
 import qrcode
 from celery import Celery
 from flask_mail import Mail, Message
-from blueprints import sms_app
+from blueprints import sms_app, SentClient
 from flask_pymongo import PyMongo
 # tencent cloud sdk
 from tencentcloud.common import credential
@@ -47,7 +45,6 @@ class ReverseProxied:
 
 
 flask_app = Flask(__name__)
-# flask_app = ProxyFix(flask_app, x_for=1, x_host=1, x_prefix=1)
 flask_app.wsgi_app = ReverseProxied(flask_app.wsgi_app)
 flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
@@ -89,9 +86,6 @@ g_no_check_list = [
 ]
 
 
-SentClient = namedtuple('SentClient', ['client_name', 'client_number'])
-
-
 def init_tx_credential():
     return credential.Credential(secretId=flask_app.config['TX_APPID'], secretKey=flask_app.config['TX_APPSECRET'])
 
@@ -109,9 +103,19 @@ def save_sent_sms(sent_list: List[SentClient], err=None):
 
 
 @celery.task
-def send_sms_task(numbers: List[SentClient], sign: str = '浩轩陈皮', template_id='881535'):
-    req = prepare_send_sms(template_id, sign)
-    send_sms(numbers, req)
+def send_sms_task(numbers: List[str], req=None, sign: str = '浩轩陈皮', template_id: str = '881535'):
+    with flask_app.app_context():
+        if req is None:
+            req = prepare_send_sms(template_id=template_id, sign=sign)
+        send_sms(numbers, req)
+
+
+@celery.task
+def send_sms_single_task(number: str, req=None, sign: str = '浩轩陈皮', template_id: str = '881535'):
+    with flask_app.app_context():
+        if req is None:
+            req = prepare_send_sms(template_id=template_id, sign=sign)
+        send_sms([number], req)
 
 
 def prepare_send_sms(template_id='881535', sign: str = '浩轩陈皮') -> models.SendSmsRequest:
@@ -122,12 +126,7 @@ def prepare_send_sms(template_id='881535', sign: str = '浩轩陈皮') -> models
     return req
 
 
-def parse_client_list():
-    # TODO: make this complete
-    pass
-
-
-def send_sms(numbers: List[SentClient], req: models.SendSmsRequest, after_send_func=None):
+def send_sms(numbers: List[str], req: models.SendSmsRequest, after_send_func=None):
     client = sms_client.SmsClient(init_tx_credential(), 'ap-guangzhou')
     req.PhoneNumberSet = numbers
     error = None
@@ -153,6 +152,7 @@ def send_mail_async(content: str, subject: str, to: str, mailer: Mail = mail) ->
 
 @flask_app.before_request
 def before_request(*args, **kwargs):
+    request.root_dir = os.path.dirname(__file__)
     if request.path in g_no_check_list:
         return None
 

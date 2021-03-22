@@ -37,7 +37,8 @@
 
 {% block content %}
     <ul class="op-list">
-        <li><a href="{{ url_for('sms.send') }}">发短信</a></li>
+        <li><a href="{{ url_for('sms.send') }}">群发短信</a></li>
+        <li><a href="{{ url_for('sms.send_single') }}">单发短信</a></li>
         <li><a href="#">加模板</a></li>
         <li><a href="#">加签名</a></li>
         <li><a href="#">查回执</a></li>

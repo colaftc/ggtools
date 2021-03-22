@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block css %}
+    .main{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+    }
+    ul{
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+    li{
+        text-align: center;
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="main">
+        <ul>
+        {% for r in resp.SendStatusSet %}
+            <li>{{ r.PhoneNumber }} | Code: {{ r.Code }} | Message: {{ r.Message }}</li>
+        {% endfor %}
+        </ul>
+        <a href="{{ url_for('sms.index') }}">返回</a>
+    </div>
+{% endblock %}

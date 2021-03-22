@@ -12,13 +12,13 @@
     }
     form div{
         font-size: 16px;
-    }
+
 {% endblock %}
 
 {% block content %}
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="list">
-       <div>
+    <form method="post">
+        <input type="text" name="number">
+        <div>
             <label for="template_id">短信模板ID</label>
             <input type="text" name="template_id" placeholder="不填写则未默认值">
         </div>
