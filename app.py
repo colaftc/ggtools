@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from datetime import datetime
 from typing import List
 from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
 from PIL import Image, ImageDraw, ImageFont
@@ -8,16 +9,20 @@ import pyzbar.pyzbar as pyzbar
 import qrcode
 from celery import Celery
 from flask_mail import Mail, Message
-from blueprints import sms_app, SentClient
+from blueprints import sms_app
+from utils import SentClient, init_credential
 from flask_pymongo import PyMongo
-# tencent cloud sdk
-from tencentcloud.common import credential
-from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
-from tencentcloud.sms.v20190711 import sms_client, models
 import os
 
 
 class ReverseProxied:
+    """
+    # 反向代理处理中间件
+    # 重点处理HTTPX_X_FORWARDED_PREFIX,用于写入script_name，使url_for结果正常
+    # 其次处理HTTPX_X_FORWARDED_FOR,替换真正的客户ip
+    # 本wsgi参数命名根据werkzeug的ProxyFixMiddleware而定
+    """
+
     def __init__(self, app):
         self.app = app
 
@@ -74,8 +79,10 @@ flask_app.config['MAIL_PASSWORD'] = 'QKRIUAMMLHGGYEGB'
 flask_app.config['MAIL_DEFAULT_SENDER'] = 'colaftc@126.com'
 
 flask_app.register_blueprint(sms_app)
-
 mail = Mail(flask_app)
+
+# a clousure for get tx credential singleton global
+get_credential = init_credential(flask_app.config['TX_APPID'], flask_app.config['TX_APPSECRET'])
 g_no_check_list = [
     '/login',
     '/mail',
@@ -84,62 +91,28 @@ g_no_check_list = [
     '/qr/rebuild',
     '/celery',
     '/sms-callback',
+    '/get-sample',
 ]
 
 
-def init_tx_credential():
-    return credential.Credential(secretId=flask_app.config['TX_APPID'], secretKey=flask_app.config['TX_APPSECRET'])
-
-
-def save_sent_sms(sent_list: List[SentClient], err=None):
-    if err is not None:
-        print('发送出错不作记录')
-        return
-
-    with flask_app.app_context():
-        mongo.db.sms.insert_many([{
-            'client_name': v['client_name'],
-            'client_number': v['client_number'],
-        } for v in sent_list])
-
-
 @celery.task
-def send_sms_task(numbers: List[str], req=None, sign: str = '浩轩陈皮', template_id: str = '881535'):
+def send_sms_task(numbers: List[str], sign: str = '浩轩陈皮', template_id: str = '881535'):
     with flask_app.app_context():
-        if req is None:
-            req = prepare_send_sms(template_id=template_id, sign=sign)
+        req = models.SendSmsRequest()
+        req.SmsSdkAppid = flask_app.config['SMS_SDKAPPID']
+        req.Sign = sign
+        req.TemplateID = template_id
         send_sms(numbers, req)
 
 
 @celery.task
-def send_sms_single_task(number: str, req=None, sign: str = '浩轩陈皮', template_id: str = '881535'):
+def send_sms_single_task(number: str, sign: str = '浩轩陈皮', template_id: str = '881535'):
     with flask_app.app_context():
-        if req is None:
-            req = prepare_send_sms(template_id=template_id, sign=sign)
+        req = models.SendSmsRequest()
+        req.SmsSdkAppid = flask_app.config['SMS_SDKAPPID']
+        req.Sign = sign
+        req.TemplateID = template_id
         send_sms([number], req)
-
-
-def prepare_send_sms(template_id='881535', sign: str = '浩轩陈皮') -> models.SendSmsRequest:
-    req = models.SendSmsRequest()
-    req.SmsSdkAppid = flask_app.config['SMS_SDKAPPID']
-    req.Sign = sign
-    req.TemplateID = template_id
-    return req
-
-
-def send_sms(numbers: List[str], req: models.SendSmsRequest, after_send_func=None):
-    client = sms_client.SmsClient(init_tx_credential(), 'ap-guangzhou')
-    req.PhoneNumberSet = numbers
-    error = None
-    try:
-        resp = client.SendSms(req)
-        return resp.to_json_string()
-    except TencentCloudSDKException as err:
-        error = err
-        print(err)
-    finally:
-        if after_send_func is not None:
-            after_send_func(numbers=numbers, err=error)
 
 
 @celery.task
@@ -166,6 +139,25 @@ def before_request(*args, **kwargs):
     return redirect(url_for('login'))
 
 
+@flask_app.route('/get-sample', methods=['GET', 'POST'])
+def get_sample():
+    if request.method == 'POST':
+        receiver = request.form['receiver']
+        tel = request.form['tel']
+        addr = request.form['addr']
+        result = mongo.db.sample.insert({
+            'receiver': receiver,
+            'tel': tel,
+            'address': addr,
+            'created_at': datetime.now(),
+            'status': 0,
+        })
+        print(result.id)
+        return render_template('got-sample.html')
+
+    return render_template('get-sample.html')
+
+
 @flask_app.route('/sms-callback', methods=['GET', 'POST'])
 def sms_callback():
     # json example
@@ -185,7 +177,7 @@ def sms_callback():
         print('sms-callback')
         json = request.json
 
-        result = [{
+        data = [{
             'mobile': j['mobile'],
             'status': j['report_status'],
             'desc': j['description'],
@@ -194,7 +186,7 @@ def sms_callback():
         } for j in json]
 
         try:
-            mongo.db.sms_result.insert_many(result)
+            mongo.db.sms_result.insert_many(data)
         except Exception as e:
             print(f'sms-callback save not ok : {e}')
         return ''

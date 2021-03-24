@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;" name="viewport" />
+    <title>新会陈皮 - 免费领样板活动中</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        .container{
+            background-color: black;
+            width: 100%;
+            min-height: 100vh;
+        }
+        .content{
+            margin: 0 auto;
+            width: 827px;
+            background-color: black;
+        }
+        .form-wrapper{
+            padding: 70px 5px;
+            background-color: black;
+            width: 80%;
+            line-height: 32px;
+            margin: 0 auto;
+        }
+        .from-wrapper form{
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-wrapper h3{
+            color: white;
+            text-align: center;
+            font-size: 32px;
+        }
+        form *{
+            width: 99%;
+            height: 75px;
+            margin-top: 25px;
+        }
+        button{
+            width: 100%;
+            background-color: red;
+            color: white;
+            margin: 50px auto 0 auto;
+        }
+        input, button{
+            border-radius: 8px;
+            font-size: 35px;
+            padding: 10px 5px;
+        }
+        button:last-child{
+            margin-top: 20px;
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+<body onload="actionClick()">
+<div class="container">
+    <div class="content">
+        <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_01.png">
+{#        <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_02.png">#}
+        <div class="form-wrapper">
+            <h3>登记免费领样 - 茶店批发专供</h3>
+            <form method="post">
+                <input type="text" name="receiver" placeholder="收货人">
+                <input type="text" name="tel" placeholder="手机">
+                <input type="text" name="addr" placeholder="收货地址">
+                <button type="submit">确认领取</button>
+                <button type="button" onclick="javascript:window.location='weixin://dl/business/?t=FrrEzuu1Dnr'">查看更多品牌陈皮</button>
+            </form>
+        </div>
+        <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_03.png">
+        <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_04.png">
+        <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_05.jpg">
+    </div>
+</div>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    function actionClick() {
+            console.log('onload executing')
+            let canvas = document.createElement('canvas')
+            let gl = canvas.getContext('experimental-webgl')
+            let debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
+            let graphDev = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+
+            axios.post('https://www.rechatun.com/cs/click-action/', {
+                devInfo: graphDev,
+            }).then(res => {
+                console.log(res)
+            })
+    }
+</script>
+</body>
+</html>
