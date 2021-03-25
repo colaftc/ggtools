@@ -12,6 +12,7 @@ from flask_mail import Mail, Message
 from blueprints import sms_app
 from utils import SentClient, init_credential
 from flask_pymongo import PyMongo
+from threading import Timer
 import os
 
 
@@ -59,6 +60,8 @@ flask_app.config['MONGODB_URI'] = 'mongodb://colaftc:fcp0520@localhost:27017/age
 flask_app.config['result_backend'] = 'redis://www.rechatun.com:6899/0'
 flask_app.config['accept_content'] = ['pickle', 'json']
 flask_app.config['result_serializer'] = 'pickle'
+# 限流字典
+flask_app.ip_map = dict()
 
 
 celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
@@ -93,6 +96,18 @@ g_no_check_list = [
     '/sms-callback',
     '/get-sample',
 ]
+
+
+# 每15分钟清理ip记录
+def clear_ip_map():
+    print('清空ip限制表')
+    flask_app.ip_map.clear()
+    inner_timer = Timer(60 * 15, clear_ip_map)
+    inner_timer.start()
+
+
+timer = Timer(60 * 15, clear_ip_map)
+timer.start()
 
 
 @celery.task
@@ -139,12 +154,42 @@ def before_request(*args, **kwargs):
     return redirect(url_for('login'))
 
 
+@flask_app.before_request
+def anti_spam():
+    if request.path == '/get-sample' and request.method == 'POST':
+        real_ip = request.headers.get('HTTP_X_FORWARDED_FOR')
+        if not real_ip:
+            real_ip = request.remote_addr
+
+        result = flask_app.ip_map.get(real_ip)
+        if result:
+            if result['times'] > 5:
+                return '请求过于频繁'
+            result['times'] += 1
+        else:
+            flask_app.ip_map[real_ip] = {
+                'times': 1,
+            }
+    return None
+
+
 @flask_app.route('/get-sample', methods=['GET', 'POST'])
 def get_sample():
     if request.method == 'POST':
-        receiver = request.form['receiver']
-        tel = request.form['tel']
-        addr = request.form['addr']
+        try:
+            receiver = request.form['receiver']
+            tel = request.form['tel']
+            addr = request.form['addr']
+        except Exception as e:
+            print(e)
+            return render_template('get-sample.html')
+
+        exists: Cursor = mongo.db.sample.find({
+            'tel': tel,
+        })
+        if exists.count():
+            print('手机号码已存在')
+            return render_template('got-sample.html', success=False)
         result = mongo.db.sample.insert({
             'receiver': receiver,
             'tel': tel,
@@ -152,10 +197,15 @@ def get_sample():
             'created_at': datetime.now(),
             'status': 0,
         })
-        print(result.id)
-        return render_template('got-sample.html')
+        print(result)
+        return render_template('got-sample.html', success=True)
 
     return render_template('get-sample.html')
+
+
+@flask_app.route('/backend/sample', methods=['GET'])
+def sample_list():
+    return render_template('sample-list.html', data=mongo.db.sample.find())
 
 
 @flask_app.route('/sms-callback', methods=['GET', 'POST'])

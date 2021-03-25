@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;" name="viewport" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>新会陈皮 - 免费领样板活动中</title>
     <style>
         *{
@@ -11,19 +11,21 @@
         }
         .container{
             background-color: black;
-            width: 100%;
+            width: 100vw;
             min-height: 100vh;
         }
         .content{
             margin: 0 auto;
-            width: 827px;
+            width: 100%;
             background-color: black;
+        }
+        img{
+            max-width: 100%;
         }
         .form-wrapper{
             padding: 70px 5px;
             background-color: black;
             width: 80%;
-            line-height: 32px;
             margin: 0 auto;
         }
         .from-wrapper form{
@@ -34,11 +36,11 @@
         .form-wrapper h3{
             color: white;
             text-align: center;
-            font-size: 32px;
+            font-size: 18px;
         }
         form *{
             width: 99%;
-            height: 75px;
+            height: 35px;
             margin-top: 25px;
         }
         button{
@@ -49,8 +51,8 @@
         }
         input, button{
             border-radius: 8px;
-            font-size: 35px;
-            padding: 10px 5px;
+            font-size: 18px;
+            padding: 3px 3px;
         }
         button:last-child{
             margin-top: 20px;
@@ -65,9 +67,9 @@
 {#        <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_02.png">#}
         <div class="form-wrapper">
             <h3>登记免费领样 - 茶店批发专供</h3>
-            <form method="post">
+            <form method="post" onsubmit="return submitCheck()">
                 <input type="text" name="receiver" placeholder="收货人">
-                <input type="text" name="tel" placeholder="手机">
+                <input type="tel" name="tel" placeholder="手机">
                 <input type="text" name="addr" placeholder="收货地址">
                 <button type="submit">确认领取</button>
                 <button type="button" onclick="javascript:window.location='weixin://dl/business/?t=FrrEzuu1Dnr'">查看更多品牌陈皮</button>
@@ -80,6 +82,28 @@
 </div>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script>
+    function submitCheck(){
+        const reg_mobile = /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/;
+        let phoneNumber = document.getElementsByName('tel')[0].value
+        if(!reg_mobile.test(phoneNumber)){
+            alert("手机号码有误，请重填")
+            return false
+        }
+
+        let receiver = document.getElementsByName('receiver')[0].value
+        if(!receiver || receiver.length < 2){
+            alert("请填写收货人")
+            return false
+        }
+
+        let address = document.getElementsByName('addr')[0].value
+        if(!address || address.length < 9){
+            alert("请填写详细地址")
+            return false
+        }
+
+        return true
+    }
     function actionClick() {
             console.log('onload executing')
             let canvas = document.createElement('canvas')

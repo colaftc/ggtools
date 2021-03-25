@@ -48,9 +48,19 @@
 <div class="container">
     <div class="content">
         <h3>
-           恭喜您，领取成功
+            {% if success %}
+                恭喜您，领取成功
+            {% else %}
+                抱歉，您已经领取过
+            {% endif %}
         </h3>
-        <div class="desc">我们将及时安排发出样板到您指定的收货地址，期间客服有可能会联系您核实信息。</div>
+        <div class="desc">
+            {% if success %}
+                我们将及时安排发出样板到您指定的收货地址，期间客服有可能会联系您核实信息。
+            {% else %}
+                由于数量有限，1位客户仅限领取1次（手机号或地址相同视为同1客户）
+            {% endif %}
+        </div>
         <button type="button" onclick="javascript:window.location='weixin://dl/business/?t=FrrEzuu1Dnr'">查看更多品牌陈皮产品</button>
     </div>
 </div>
