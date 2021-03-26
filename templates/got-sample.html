@@ -61,8 +61,24 @@
                 由于数量有限，1位客户仅限领取1次（手机号或地址相同视为同1客户）
             {% endif %}
         </div>
-        <button type="button" onclick="javascript:window.location='weixin://dl/business/?t=FrrEzuu1Dnr'">查看更多品牌陈皮产品</button>
+        <button type="button" onclick="actionClick()">查看更多品牌陈皮产品</button>
     </div>
 </div>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        function actionClick() {
+            let canvas = document.createElement('canvas')
+            let gl = canvas.getContext('experimental-webgl')
+            let debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
+            let graphDev = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+
+            axios.post('/cs/click-action/', {
+                devInfo: graphDev,
+            }).then(res => {
+                console.log(res)
+            })
+            window.location='weixin://dl/business/?t=FrrEzuu1Dnr'
+        }
+    </script>
 </body>
 </html>
