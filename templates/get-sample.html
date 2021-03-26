@@ -73,7 +73,7 @@
                 <input type="tel" name="tel" placeholder="手机">
                 <input type="text" name="addr" placeholder="收货地址">
                 <button type="submit">确认领取</button>
-                <button type="button" onclick="javascript:window.location='weixin://dl/business/?t=FrrEzuu1Dnr'">查看更多品牌陈皮</button>
+                <button type="button" onclick="actionClick(true)">查看更多品牌陈皮</button>
             </form>
         </div>
         <img src="https://css-1301796299.cos.ap-guangzhou.myqcloud.com/get-sample/sample_03.png">
@@ -105,18 +105,22 @@
 
         return true
     }
-    function actionClick() {
+    function actionClick(clicked=false) {
             console.log('onload executing')
             let canvas = document.createElement('canvas')
             let gl = canvas.getContext('experimental-webgl')
             let debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
             let graphDev = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
 
-            axios.post('https://www.rechatun.com/cs/click-action/', {
-                devInfo: graphDev,
-            }).then(res => {
-                console.log(res)
-            })
+            if(clicked){
+                axios.post('https://www.rechatun.com/cs/click-action/', {
+                    devInfo: graphDev,
+                }).then(res => {
+                    console.log(res)
+                })
+            }
+
+            window.location='weixin://dl/business/?t=FrrEzuu1Dnr'
     }
 </script>
 </body>
