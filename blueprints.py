@@ -1,9 +1,74 @@
-from flask import Blueprint, render_template, request, current_app
+from flask import Blueprint, render_template, request, current_app, flash, abort
 from utils import parse_client_list, send_sms, prepare_send_sms
+from models import db, ClientInfo
+from sqlalchemy.exc import IntegrityError
+from flask_restful import Api, reqparse, Resource, marshal_with, fields
 import json
+import pymysql
 
 
 sms_app = Blueprint('sms', import_name='sms', url_prefix='/sms')
+api = Api(sms_app)
+
+
+client_info_fields = {
+    'name': fields.String(),
+    'tel': fields.String(),
+    'company': fields.String(),
+    'industry': fields.String(),
+    'address': fields.String(),
+}
+
+
+class ClientInfoResource(Resource):
+    @marshal_with(client_info_fields)
+    def get(self, client_id=None):
+        if client_id:
+            result = ClientInfo.query.get(client_id)
+            if not result:
+                abort(404)
+        return ClientInfo.query.all()
+
+
+api.add_resource(ClientInfoResource, '/api/client-info', '/api/client-info/<int:client_id>')
+
+
+paginate_args = reqparse.RequestParser()
+paginate_args.add_argument(
+    'page',
+    type=int,
+    location=['args'],
+    required=False,
+    default=1,
+)
+
+
+@sms_app.route('/client-info', methods=['GET'])
+@sms_app.route('/client-info/<string:area>', methods=['GET'])
+def client_info(area: str = None):
+    args = paginate_args.parse_args()
+    page = args['page']
+    page_size = int(request.cookies.get('page_size', 200))
+    record_count = ClientInfo.query.count()
+
+    if record_count < page_size * page:
+        page = 1
+
+    if area:
+        result = ClientInfo.query.filter(ClientInfo.address.startswith(area)).distinct(ClientInfo.tel)
+        if not result:
+            abort(404)
+    else:
+        result = ClientInfo.query.distinct(ClientInfo.tel)
+
+    return render_template(
+        'client-list.html',
+        client_list=result.paginate(page, page_size),
+        page=page,
+        area=area,
+        page_size=page_size,
+        count=record_count,
+    )
 
 
 @sms_app.route('/test', methods=['GET', 'POST'])
@@ -24,13 +89,17 @@ def upload_client_list():
         client_list = request.files.get('list')
         if client_list is None:
             return 'None', 403
-        # TODO: do save client-list here
-        data = parse_client_list(request, client_list, add_86prefix=False)
-        for d in data:
-            print(d)
-        return 'got it'
-    else:
-        return render_template('upload-client-list.html')
+        # data = [ClientInfo(**c._asdict()) for c in parse_client_list(request, client_list, add_86prefix=False)]
+        # try:
+        #     db.session.bulk_save_objects(data)
+        #     db.session.commit()
+        # except IntegrityError as e:
+        #     print(e)
+        [db.engine.execute(
+            f'insert ignore into client_info(name, tel, address , company, industry) values("{c.name}", "{c.tel}", "{pymysql.escape_string(c.address)}", "{c.company}", "{c.industry}")',
+        ) for c in parse_client_list(request, client_list, add_86prefix=False)]
+        flash('录入成功')
+    return render_template('upload-client-list.html')
 
 
 @sms_app.route('/parse', methods=['GET', 'POST'])

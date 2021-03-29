@@ -10,9 +10,12 @@ import qrcode
 from celery import Celery
 from flask_mail import Mail, Message
 from blueprints import sms_app
-from utils import SentClient, init_credential
+from utils import SentClient, init_credential, parse_client_list
 from flask_pymongo import PyMongo
 from threading import Timer
+from models import db, ClientInfo
+from flask_migrate import Migrate, MigrateCommand
+from flask_script import Manager
 import os
 
 
@@ -56,23 +59,16 @@ flask_app.wsgi_app = ReverseProxied(flask_app.wsgi_app)
 flask_app.config['SECRET_KEY'] = 'somethinguniqueandrememberless'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
 flask_app.config['CELERY_BROKER_URL'] = 'amqp://ggadmin:GG_20200401@www.rechatun.com:5672/'
+flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:fcp0520@db:32768/crm'
+flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 flask_app.config['MONGODB_URI'] = 'mongodb://colaftc:fcp0520@localhost:27017/agent'
 flask_app.config['result_backend'] = 'redis://www.rechatun.com:6899/0'
 flask_app.config['accept_content'] = ['pickle', 'json']
 flask_app.config['result_serializer'] = 'pickle'
-# 限流字典
-flask_app.ip_map = dict()
-
-
-celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
-celery.conf.update(flask_app.config)
-mongo = PyMongo(flask_app, uri=flask_app.config['MONGODB_URI'])
-
 # sms settings
 flask_app.config['TX_APPID'] = 'AKID6PSFl0LRt4zYy8MYpKZXEepjMifNobCP'
 flask_app.config['TX_APPSECRET'] = '6bcMs64ylHWVMxITOcgV7crqY0LSJgx4'
 flask_app.config['SMS_SDKAPPID'] = '1400491233'
-
 # Flask-Mail configuration
 flask_app.config['MAIL_SERVER'] = 'smtp.126.com'
 flask_app.config['MAIL_PORT'] = 25
@@ -81,8 +77,23 @@ flask_app.config['MAIL_USERNAME'] = 'colaftc'
 flask_app.config['MAIL_PASSWORD'] = 'QKRIUAMMLHGGYEGB'
 flask_app.config['MAIL_DEFAULT_SENDER'] = 'colaftc@126.com'
 
+
+# 限流字典
+flask_app.ip_map = dict()
+manager = Manager(flask_app)
+db.init_app(flask_app)
+migrate = Migrate(flask_app, db)
+manager.add_command('db', MigrateCommand)
+celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
+celery.conf.update(flask_app.config)
+mongo = PyMongo(flask_app, uri=flask_app.config['MONGODB_URI'])
 flask_app.register_blueprint(sms_app)
 mail = Mail(flask_app)
+
+
+@manager.shell
+def make_shell_context():
+    return dict(app=flask_app, db=db, ClientInfo=ClientInfo)
 
 # a clousure for get tx credential singleton global
 get_credential = init_credential(flask_app.config['TX_APPID'], flask_app.config['TX_APPSECRET'])
@@ -377,4 +388,4 @@ def exp_info():
 
 
 if __name__ == '__main__':
-    flask_app.run(port=8000)
+    manager.run()

@@ -37,11 +37,11 @@
 
 {% block content %}
     <ul class="op-list">
+        <li><a href="{{ url_for('sms.upload_client_list') }}">上传客表</a></li>
+        <li><a href="{{ url_for('sms.client_info') }}">客户查询</a></li>
         <li><a href="{{ url_for('sms.send') }}">群发短信</a></li>
         <li><a href="{{ url_for('sms.send_single') }}">单发短信</a></li>
-        <li><a href="#">加模板</a></li>
-        <li><a href="#">加签名</a></li>
-        <li><a href="#">查回执</a></li>
+        <li><a href="{{ url_for('sms_callback') }}">查回执</a></li>
         <li><a href="{{ url_for('logout') }}">退出</a></li>
     </ul>
 {% endblock %}

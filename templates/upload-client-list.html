@@ -13,9 +13,22 @@
         margin-top: 25px;
         width: 40%;
     }
+    .flashed{
+        width:40%;
+        margin: 0 auto;
+        font-size: 18px;
+        border-radius: 5px;
+        color: red;
+        background-color: yellow;
+        height: 25px;
+    }
 {% endblock %}
 
 {% block content %}
+    {% for m in get_flashed_messages() %}
+        <div class="flashed">{{ m }}</div>
+    {% endfor %}
+
     <form enctype="multipart/form-data" method="post">
         <div>
             <label for="list">客户列表文件</label>
@@ -23,4 +36,12 @@
         </div>
         <button type="submit">上传</button>
     </form>
+    <script>
+        let flashed = document.querySelector('.flashed')
+        if(flashed){
+            setTimeout(()=> {
+                flashed.remove()
+            }, 1000 * 3)
+        }
+    </script>
 {% endblock %}

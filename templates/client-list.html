@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block css %}
+    table{
+        font-size: 16px;
+        text-align: center;
+        width: 70%;
+        margin: 50px auto;
+    }
+    .pager{
+        width: 70%;
+        margin: 20px auto;
+        font-size: 15px;
+    }
+    tbody tr{
+        height: 35px;
+    }
+    tbody tr:nth-child(odd){
+        background-color: slateblue;
+        color: white;
+    }
+    .pager{
+        padding-bottom: 200px;
+    }
+    .pager ul{
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        font-size: 15px;
+        float: right;
+    }
+    .pager ul li{
+        text-align: center;
+        width: 33px;
+        height: 33px;
+        margin-left: 10px;
+        border: 1px solid blue;
+        line-height: 2.1em;
+    }
+    a{
+        text-decoration: none;
+    }
+    .pager .active , .pager .active :link, .pager .active :visited{
+        background-color: blue;
+        color: white;
+    }
+    .pager div{
+        float: right;
+    }
+{% endblock %}
+
+{% block content %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>行业</th>
+                <th>企业名</th>
+                <th>联系人</th>
+                <th>手机</th>
+                <th>地址</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in client_list.items %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.industry }}</td>
+                <td>{{ c.company }}</td>
+                <td>{{ c.name }}</td>
+                <td>{{ c.tel }}</td>
+                <td>{{ c.address }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="pager">
+        <ul>
+            {% for p in client_list.iter_pages() %}
+                {% if p %}
+                    {% if area %}
+                        <li {% if p == page %} class="active" {% endif %}><a href="{{ url_for('sms.client_info', page=p, area=area) }}">{{ p }}</a></li>
+                    {% else %}
+                        <li {% if p == page %} class="active" {% endif %}><a href="{{ url_for('sms.client_info', page=p) }}">{{ p }}</a></li>
+                    {% endif %}
+                {% else %}
+                    <li> ... </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        <div>
+            共{{ count }}条，每页
+            <select name="page_size" onchange="change_page_size(this)">
+                <option value="50" {% if page_size == 50 %} selected {% endif %}>50</option>
+                <option value="200" {% if page_size == 200 %} selected {% endif %}>200</option>
+                <option value="500" {% if page_size == 500 %} selected {% endif %}>500</option>
+            </select>
+            条数据
+        </div>
+    </div>
+    <script>
+        function change_page_size(e){
+            document.cookie = "page_size=" + e.value
+            window.location.reload()
+        }
+    </script>
+{% endblock %}

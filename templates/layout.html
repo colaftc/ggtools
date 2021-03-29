@@ -25,6 +25,10 @@
             justify-content: center;
             align-items: center;
         }
+        header a{
+            text-decoration: none;
+            color: white;
+        }
         {% block css %}
 
         {% endblock %}
@@ -34,7 +38,7 @@
 <div class="container">
     <header>
         {% block header %}
-            <h2>广根短信小工具</h2>
+            <h2><a href="{{ url_for('sms.index') }}">广根短信小工具</a></h2>
         {% endblock %}
     </header>
     {% block content %}
