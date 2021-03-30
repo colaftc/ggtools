@@ -31,8 +31,6 @@ class ClientInfoResource(Resource):
 
 
 api.add_resource(ClientInfoResource, '/api/client-info', '/api/client-info/<int:client_id>')
-
-
 paginate_args = reqparse.RequestParser()
 paginate_args.add_argument(
     'page',
@@ -41,26 +39,50 @@ paginate_args.add_argument(
     required=False,
     default=1,
 )
+filter_args = reqparse.RequestParser()
+filter_args.add_argument(
+    'province',
+    type=str,
+    location=['form', 'args'],
+    required=False,
+    default=None,
+)
+filter_args.add_argument(
+    'company',
+    type=str,
+    location=['form', 'args'],
+    required=False,
+    default=None,
+)
 
 
-@sms_app.route('/client-info', methods=['GET'])
-@sms_app.route('/client-info/<string:area>', methods=['GET'])
+@sms_app.route('/client-info', methods=['GET', "POST"])
 def client_info(area: str = None):
     args = paginate_args.parse_args()
     page = args['page']
     page_size = int(request.cookies.get('page_size', 200))
-    record_count = ClientInfo.query.count()
 
+    record_count = ClientInfo.query.count()
     if record_count < page_size * page:
         page = 1
 
-    if area:
-        result = ClientInfo.query.filter(ClientInfo.address.startswith(area)).distinct(ClientInfo.tel)
-        if not result:
-            abort(404)
-    else:
-        result = ClientInfo.query.distinct(ClientInfo.tel)
+    filters = filter_args.parse_args()
+    province = filters['province']
+    company = filters['company']
+    query = ClientInfo.query
 
+    print(f'args: page={page}, page_size={page_size}, province={province}, company={company}')
+
+    if province:
+        query = query.filter(ClientInfo.address.startswith(province))
+
+    if company:
+        query = query.filter(ClientInfo.company.like(f'%{company}%'))
+
+    result = query.distinct(ClientInfo.tel)
+
+    if not result:
+        abort(404)
     return render_template(
         'client-list.html',
         client_list=result.paginate(page, page_size),
@@ -68,6 +90,7 @@ def client_info(area: str = None):
         area=area,
         page_size=page_size,
         count=record_count,
+        filters=[province, company],
     )
 
 

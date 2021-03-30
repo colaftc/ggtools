@@ -1,11 +1,18 @@
 {% extends "layout.html" %}
 
 {% block css %}
-    table{
+    .dataset{
         font-size: 16px;
-        text-align: center;
+        width: 100%;
+    }
+    table{
         width: 70%;
         margin: 50px auto;
+        text-align: center;
+    }
+    form{
+        width: 70%;
+        margin: 30px auto;
     }
     .pager{
         width: 70%;
@@ -48,42 +55,49 @@
     .pager div{
         float: right;
     }
+
 {% endblock %}
 
 {% block content %}
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>行业</th>
-                <th>企业名</th>
-                <th>联系人</th>
-                <th>手机</th>
-                <th>地址</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for c in client_list.items %}
-            <tr>
-                <td>{{ c.id }}</td>
-                <td>{{ c.industry }}</td>
-                <td>{{ c.company }}</td>
-                <td>{{ c.name }}</td>
-                <td>{{ c.tel }}</td>
-                <td>{{ c.address }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="dataset">
+        <form method="post">
+            <input placeholder="指定地区" name="province" value="{{ filters.0 if filters.0 else '' }}">
+            <input placeholder="模糊搜索企业名" name="company" value="{{ filters.1 if filters.1 else '' }}">
+            <button type="submit" style="padding: 0 5px;">查询</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>行业</th>
+                    <th>企业名</th>
+                    <th>联系人</th>
+                    <th>手机</th>
+                    <th>地址</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for c in client_list.items %}
+                <tr>
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.industry }}</td>
+                    <td>{{ c.company }}</td>
+                    <td>{{ c.name }}</td>
+                    <td>{{ c.tel }}</td>
+                    <td>{{ c.address }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
     <div class="pager">
         <ul>
             {% for p in client_list.iter_pages() %}
                 {% if p %}
-                    {% if area %}
-                        <li {% if p == page %} class="active" {% endif %}><a href="{{ url_for('sms.client_info', page=p, area=area) }}">{{ p }}</a></li>
-                    {% else %}
-                        <li {% if p == page %} class="active" {% endif %}><a href="{{ url_for('sms.client_info', page=p) }}">{{ p }}</a></li>
-                    {% endif %}
+                    <li {% if p == page %} class="active" {% endif %}>
+                        <a href="{{ url_for('sms.client_info', page=p, province=filters.0, company=filters.1) }}">{{ p }}</a>
+                    </li>
                 {% else %}
                     <li> ... </li>
                 {% endif %}
