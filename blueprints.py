@@ -62,10 +62,6 @@ def client_info(area: str = None):
     page = args['page']
     page_size = int(request.cookies.get('page_size', 200))
 
-    record_count = ClientInfo.query.count()
-    if record_count < page_size * page:
-        page = 1
-
     filters = filter_args.parse_args()
     province = filters['province']
     company = filters['company']
@@ -79,7 +75,15 @@ def client_info(area: str = None):
     if company:
         query = query.filter(ClientInfo.company.like(f'%{company}%'))
 
+    # 检查页码是否超过总页数
     result = query.distinct(ClientInfo.tel)
+    record_count = result.count()
+    mod = record_count % page_size
+    limit = record_count / page_size
+    limit = limit if mod == 0 else limit + 1
+    # 超过则从第一页开始
+    if page > limit:
+        page = 1
 
     if not result:
         abort(404)
@@ -87,7 +91,6 @@ def client_info(area: str = None):
         'client-list.html',
         client_list=result.paginate(page, page_size),
         page=page,
-        area=area,
         page_size=page_size,
         count=record_count,
         filters=[province, company],

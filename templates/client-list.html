@@ -1,59 +1,75 @@
 {% extends "layout.html" %}
 
 {% block css %}
-    .dataset{
-        font-size: 16px;
-        width: 100%;
+    @media screen{
+        .dataset{
+            font-size: 16px;
+            width: 100%;
+        }
+        table{
+            width: 70%;
+            margin: 50px auto;
+            text-align: center;
+        }
+        form{
+            width: 70%;
+            margin: 30px auto;
+        }
+        .pager{
+            width: 70%;
+            margin: 20px auto;
+            font-size: 15px;
+        }
+        tbody tr{
+            height: 35px;
+        }
+        tbody tr:nth-child(odd){
+            background-color: slateblue;
+            color: white;
+        }
+        .pager{
+            padding-bottom: 200px;
+        }
+        .pager ul{
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            font-size: 15px;
+            float: right;
+        }
+        .pager ul li{
+            text-align: center;
+            width: 33px;
+            height: 33px;
+            margin-left: 10px;
+            border: 1px solid blue;
+            line-height: 2.1em;
+        }
+        a{
+            text-decoration: none;
+        }
+        .pager .active , .pager .active :link, .pager .active :visited{
+            background-color: blue;
+            color: white;
+        }
+        .pager div{
+            float: right;
+        }
     }
-    table{
-        width: 70%;
-        margin: 50px auto;
-        text-align: center;
-    }
-    form{
-        width: 70%;
-        margin: 30px auto;
-    }
-    .pager{
-        width: 70%;
-        margin: 20px auto;
-        font-size: 15px;
-    }
-    tbody tr{
-        height: 35px;
-    }
-    tbody tr:nth-child(odd){
-        background-color: slateblue;
-        color: white;
-    }
-    .pager{
-        padding-bottom: 200px;
-    }
-    .pager ul{
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        font-size: 15px;
-        float: right;
-    }
-    .pager ul li{
-        text-align: center;
-        width: 33px;
-        height: 33px;
-        margin-left: 10px;
-        border: 1px solid blue;
-        line-height: 2.1em;
-    }
-    a{
-        text-decoration: none;
-    }
-    .pager .active , .pager .active :link, .pager .active :visited{
-        background-color: blue;
-        color: white;
-    }
-    .pager div{
-        float: right;
+
+    @media print{
+        *{
+            font-size:12px;
+        }
+        .pager, form, td, header, thead{
+            display:none;
+        }
+        tr :nth-child(3), tr :nth-child(4), tr :nth-child(5), tr :nth-child(6){
+            float:left;
+            display: inline;
+            margin: 5px;
+        }
     }
 
 {% endblock %}
