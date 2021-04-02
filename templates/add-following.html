@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form method="post">
+    {% for m in get_flashed_messages('crm') %}
+        <div>{{ m }}</div>
+    {% endfor %}
+    <input type="text" name="name">
+    <input type="tel" name="tel">
+    <select name="status">
+        {% for c in choices %}
+            <option value="{{ c.value }}">{{ c.value }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="提交">
+</form>
+
+<div>
+    {% for d in data %}
+        <div>{{ d.name }} | {{ d.status.value }}</div>
+    {% endfor %}
+</div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 from datetime import datetime
 from typing import List
-from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash
+from flask import Flask, jsonify, request, make_response, render_template, session, redirect, url_for, flash, abort
 from PIL import Image, ImageDraw, ImageFont
 from pymongo.cursor import Cursor
 import requests
@@ -9,14 +9,16 @@ import pyzbar.pyzbar as pyzbar
 import qrcode
 from celery import Celery
 from flask_mail import Mail, Message
-from blueprints import sms_app
+from blueprints import sms_app, auth_app, crm_app
 from utils import SentClient, init_credential, parse_client_list
 from flask_pymongo import PyMongo
 from threading import Timer
-from models import db, ClientInfo
+from models import db, ClientInfo, Seller
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
+from flask_login import LoginManager
 import os
+import re
 
 
 class ReverseProxied:
@@ -77,9 +79,15 @@ flask_app.config['MAIL_USERNAME'] = 'colaftc'
 flask_app.config['MAIL_PASSWORD'] = 'QKRIUAMMLHGGYEGB'
 flask_app.config['MAIL_DEFAULT_SENDER'] = 'colaftc@126.com'
 
-
 # 限流字典
 flask_app.ip_map = dict()
+
+# 注册蓝图
+flask_app.register_blueprint(sms_app)
+flask_app.register_blueprint(auth_app)
+flask_app.register_blueprint(crm_app)
+
+# 初始化各种
 manager = Manager(flask_app)
 db.init_app(flask_app)
 migrate = Migrate(flask_app, db)
@@ -87,13 +95,21 @@ manager.add_command('db', MigrateCommand)
 celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
 celery.conf.update(flask_app.config)
 mongo = PyMongo(flask_app, uri=flask_app.config['MONGODB_URI'])
-flask_app.register_blueprint(sms_app)
 mail = Mail(flask_app)
+login_manager = LoginManager(flask_app)
+login_manager.login_view = 'auth.login'
+login_manager.session_protection = 'strong'
+
+
+@login_manager.user_loader
+def user_loader(user_id):
+    return Seller.query.get(user_id)
 
 
 @manager.shell
 def make_shell_context():
-    return dict(app=flask_app, db=db, ClientInfo=ClientInfo)
+    return dict(app=flask_app, db=db, ClientInfo=ClientInfo, Seller=Seller)
+
 
 # a clousure for get tx credential singleton global
 get_credential = init_credential(flask_app.config['TX_APPID'], flask_app.config['TX_APPSECRET'])
@@ -156,12 +172,12 @@ def before_request(*args, **kwargs):
     if request.path in g_no_check_list:
         return None
 
-    user = session.get('user')
+    user = session.get('muser')
     if user is not None:
-        request.user = user
+        request.muser = user
         return None
 
-    request.user = None
+    request.muser = None
     return redirect(url_for('login'))
 
 
@@ -182,6 +198,38 @@ def anti_spam():
                 'times': 1,
             }
     return None
+
+
+@flask_app.route('/add-seller', methods=['GET', 'POST'])
+def add_seller():
+    if request.method == 'POST':
+        try:
+            name = request.form['name']
+            tel = request.form['tel']
+            if len(name) < 2 or len(tel) < 11:
+                flash('输入长度不足')
+            elif not re.match('^\d{11}$', tel):
+                flash('电话号码不正确')
+            else:
+                s = Seller(name=name, tel=tel)
+                db.session.add(s)
+                db.session.commit()
+                flash('添加话务员成功')
+        except Exception as e:
+            print(e)
+            flash('添加失败，请重新输入，如输入无误则可能由于称呼与电话已存在所致')
+        return redirect(url_for('add_seller'))
+    return render_template('add-seller.html', sellers=Seller.query.all())
+
+
+@flask_app.route('/disable-seller', methods=['GET'])
+def disable_seller():
+    sid = request.args['id']
+    s = Seller.query.get(sid)
+    s.status = not s.status
+    db.session.add(s)
+    db.session.commit()
+    return redirect(url_for('add_seller'))
 
 
 @flask_app.route('/get-sample', methods=['GET', 'POST'])
@@ -262,7 +310,7 @@ def login():
         pwd = request.form.get('password')
         if username == 'ggadmin' and pwd == 'GG_20200401':
             resp = make_response('<html></html>', 301)
-            session['user'] = {
+            session['muser'] = {
                 'username': 'ggadmin',
                 'role': 'admin',
             }
@@ -276,8 +324,8 @@ def login():
 
 @flask_app.route('/logout', methods=['GET'])
 def logout():
-    session.pop('user')
-    request.user = None
+    session.pop('muser')
+    request.muser = None
     return redirect(url_for('login'))
 
 

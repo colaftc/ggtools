@@ -1,0 +1,65 @@
+{% extends "crm-layout.html" %}
+
+{% block content %}
+    <div class="columns is-centered">
+        {% for m in get_flashed_messages() %}
+            <div class="column has-background-warning has-text-danger">
+                {{ m }}
+            </div>
+        {% endfor %}
+    </div>
+    <div class="columns is-centered is-mobile">
+        <div class="column ">
+            <form class="box is-flex is-flex-direction-column" method="post">
+                <div class="field">
+                    <label class="label">称呼</label>
+                    <input name="name" type="text" class="control" style="width: 100%;">
+                </div>
+                <div class="field">
+                    <label class="label">电话</label>
+                    <input name="tel" type="tel" class="control" style="width: 100%;">
+                </div>
+                <button type="submit" class="button is-primary">提交</button>
+            </form>
+        </div>
+    </div>
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>称呼</th>
+                <th>电话</th>
+                <th>在职</th>
+                <th>加入日期</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sellers %}
+                <tr style="line-height: 2em;">
+                    <td>{{ s.id }}</td>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.tel }}</td>
+                    <td>{{ '是' if s.status else '否' }}</td>
+                    <td>{{ s.created_at }}</td>
+                    <td>
+                        <a href="#" class="button is-info">查看跟进记录</a>
+                        <a href="{{ url_for('disable_seller', id=s.id) }}" class="button is-warning">
+                            {% if s.status %}
+                                停用
+                            {% else %}
+                                启用
+                            {% endif %}
+                        </a>
+                        <a href="#" class="button is-danger" onclick="alert('删除会导致数据丢失，请联系技术员操作');return false;">删除</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="has-text-centered">无数据</td>
+                    <td colspan="2" class="has-text-centered"> / </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,10 +1,64 @@
-from flask import Blueprint, render_template, request, current_app, flash, abort
+from flask import Blueprint, render_template, request, current_app, flash, abort, redirect, url_for
 from utils import parse_client_list, send_sms, prepare_send_sms
-from models import db, ClientInfo
+from models import db, ClientInfo, Seller, Following, FollowStatusChoices
+from flask_login import login_required, login_user, logout_user, current_user, login_url
 from sqlalchemy.exc import IntegrityError
 from flask_restful import Api, reqparse, Resource, marshal_with, fields
 import json
 import pymysql
+
+
+# Auth Blueprint begin
+auth_app = Blueprint('auth', import_name='auth', url_prefix='/auth')
+
+
+@auth_app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        tel = request.form.get('tel')
+        user = Seller.query.filter_by(name=name).first()
+        if user.tel == tel:
+            if login_user(user, remember=True):
+                next_url = request.args.get('next', url_for('crm.index'))
+                return redirect(next_url)
+
+    return render_template('crm-login.html')
+
+
+@auth_app.route('/logout', methods=['GET'])
+def logout():
+    logout_user()
+    return redirect(url_for('auth.login'))
+# Auth Blueprint end
+
+
+# crm blueprint begin
+crm_app = Blueprint('crm', import_name='crm', url_prefix='/crm')
+
+
+@crm_app.route('/index', methods=['GET'])
+@login_required
+def index():
+    return 'crm index'
+
+
+@crm_app.route('/add-following', methods=['GET', 'POST'])
+@login_required
+def add_following():
+    following_list = Following.query.all()
+    if request.method == 'POST':
+        name = request.form.get('name')
+        tel = request.form.get('tel')
+        status = request.form.get('status')
+        if name and tel:
+            db.session.add(Following(name=name, tel=tel, status=status))
+            db.session.commit()
+            flash('添加成功', 'crm')
+        return redirect(url_for('crm.add_following'))
+
+    return render_template('add-following.html', choices=FollowStatusChoices, data=following_list)
+# crm blueprint end
 
 
 sms_app = Blueprint('sms', import_name='sms', url_prefix='/sms')
