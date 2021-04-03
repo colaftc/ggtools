@@ -123,6 +123,12 @@ g_no_check_list = [
     '/celery',
     '/sms-callback',
     '/get-sample',
+    '/auth/login',
+    '/auth/logout',
+    '/crm/index',
+    '/crm/memo',
+    '/crm/add-following',
+    '/crm/following-list',
 ]
 
 
