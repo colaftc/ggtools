@@ -99,6 +99,7 @@ mail = Mail(flask_app)
 login_manager = LoginManager(flask_app)
 login_manager.login_view = 'auth.login'
 login_manager.session_protection = 'strong'
+login_manager.login_message_category = 'auth'
 
 
 @login_manager.user_loader

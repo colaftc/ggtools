@@ -1,0 +1,53 @@
+{% extends "crm-layout.html" %}
+{% block title %}
+    跟进列表
+{% endblock %}
+{% block content %}
+    <div class="panel-block">
+        <div class="control has-icons-left">
+            <form method="get" class="is-flex is-flex-direction-row">
+                <input class="input" type="text" placeholder="搜索" name="filter" value="{{ filter or '' }}">
+                <span class="icon is-left">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                </span>
+                <button type="submit" class="button is-primary">查询</button>
+            </form>
+        </div>
+    </div>
+    <div class="panel-block">跟进记录列表</div>
+    <div class="panel-block">
+        <div class="container">
+        {% for f in following %}
+            <div class="card block">
+                <div class="card-header">
+                    <p class="is-6">{{ f.company or '未指定公司名' }}</p>
+                </div>
+                <div class="card-content">
+                    <div class="media">
+                        <div class="media-left">
+                            <p class="subtitle" style="width: 70px;font-size:1.5em;line-height: 1.4em;
+                                    height: 70px; background-color: gray;padding: 3px 0 0 10px;
+                                    color: white; display: flex; flex-direction: row;
+                            ">{{ f.status.value }}</p>
+                        </div>
+                        <div class="media-content">
+                            <p>称呼：{{ f.name }}</p>
+                            <p>电话：{{ f.tel }}</p>
+                            <p class="is-flex is-flex-direction-column">
+                                <text class="is-size-7">创建时间：{{ f.created_at }}</text>
+                                <text class="is-size-7">最后更新：{{ f.updated_at }}</text>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True) }}">编辑</a>
+                    <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="card has-text-centered">无数据</div>
+        {% endfor %}
+        </div>
+    </div>
+{% endblock %}

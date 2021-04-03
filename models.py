@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from sqlalchemy_utils import ChoiceType
 from flask_login import UserMixin
 from enum import Enum
@@ -42,6 +43,8 @@ class FollowStatusChoices(Enum):
 class Following(db.Model):
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     name = db.Column(db.String(100))
+    company = db.Column(db.String(100))
     tel = db.Column(db.String(20))
     status = db.Column(ChoiceType(FollowStatusChoices))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now, comment='创建时间')
+    updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now, comment='更新时间')

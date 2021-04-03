@@ -1,28 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<form method="post">
-    {% for m in get_flashed_messages('crm') %}
-        <div>{{ m }}</div>
-    {% endfor %}
-    <input type="text" name="name">
-    <input type="tel" name="tel">
-    <select name="status">
-        {% for c in choices %}
-            <option value="{{ c.value }}">{{ c.value }}</option>
-        {% endfor %}
-    </select>
-    <input type="submit" value="提交">
-</form>
+{% extends "crm-layout.html" %}
+{% block title %}
+    添加或更新跟进记录
+{% endblock %}
 
-<div>
-    {% for d in data %}
-        <div>{{ d.name }} | {{ d.status.value }}</div>
-    {% endfor %}
-</div>
-</body>
-</html>
+{% block content %}
+    <div class="panel-block is-active">
+        <form method="post" class="form container">
+            {% for m in get_flashed_messages('crm') %}
+                <article class="message is-warning">
+                    <div class="message-header">
+                        <p>消息</p>
+                    </div>
+                    <div class="message-body">
+                        {{ m.1}}
+                    </div>
+                </article>
+            {% endfor %}
+            <div class="field">
+                <label class="label" for="name">联系人</label>
+                <div class="control">
+                    <input type="text" name="name" class="input" placeholder="联系人" value="{{ name }}">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="compamy">公司名</label>
+                <div class="control">
+                    <input type="text" name="company" class="input" placeholder="公司名" value="{{ company }}">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="compamy">联系电话</label>
+                <div class="control">
+                    <input type="tel" name="tel" class="input" placeholder="联系电话" value="{{ tel }}">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">跟进状态</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="status">
+                            {% for c in choices %}
+                                <option value="{{ c.value }}" {% if c.value == status %} selected="true" {% endif %}>{{ c.value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="id" value="{{ id or '' }}">
+            <input type="hidden" name="is_update" value="{{ is_update or False }}">
+            <input type="submit" value="{% if is_update %}更新{% else %}提交{% endif %}" class="button is-primary">
+            {% if is_update %}
+                <button type="button" class="button is-info" onclick="window.history.go(-1)">返回</button>
+            {% endif %}
+        </form>
+    </div>
+
+    <script>
+        function removeMessage() {
+            setTimeout(() => {
+                let articles = document.querySelector('article')
+                if(articles){
+                    articles.remove()
+                }
+            }, 5000)
+        }
+        document.body.onload = removeMessage
+    </script>
+{% endblock %}

@@ -2,10 +2,11 @@ from flask import Blueprint, render_template, request, current_app, flash, abort
 from utils import parse_client_list, send_sms, prepare_send_sms
 from models import db, ClientInfo, Seller, Following, FollowStatusChoices
 from flask_login import login_required, login_user, logout_user, current_user, login_url
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_, desc
 from flask_restful import Api, reqparse, Resource, marshal_with, fields
 import json
 import pymysql
+import re
 
 
 # Auth Blueprint begin
@@ -18,10 +19,12 @@ def login():
         name = request.form.get('name')
         tel = request.form.get('tel')
         user = Seller.query.filter_by(name=name).first()
-        if user.tel == tel:
+        if user and user.tel == tel:
             if login_user(user, remember=True):
-                next_url = request.args.get('next', url_for('crm.index'))
+                next_url = request.args.get('next', url_for('crm.following_list'))
                 return redirect(next_url)
+        else:
+            flash('登录失败', 'auth')
 
     return render_template('crm-login.html')
 
@@ -46,18 +49,90 @@ def index():
 @crm_app.route('/add-following', methods=['GET', 'POST'])
 @login_required
 def add_following():
-    following_list = Following.query.all()
     if request.method == 'POST':
         name = request.form.get('name')
         tel = request.form.get('tel')
+        company = request.form.get('company')
         status = request.form.get('status')
-        if name and tel:
-            db.session.add(Following(name=name, tel=tel, status=status))
-            db.session.commit()
-            flash('添加成功', 'crm')
-        return redirect(url_for('crm.add_following'))
+        fid = request.form.get('id')
+        is_update = request.form.get('is_update', False)
 
-    return render_template('add-following.html', choices=FollowStatusChoices, data=following_list)
+        if name and company:
+            if tel and re.match('^\d{11}$', tel):
+                if is_update and fid:
+                    Following.query.filter_by(id=fid).update({
+                        'name': name,
+                        'company': company,
+                        'tel': tel,
+                        'status': status
+                    })
+                    flash('更新成功', 'crm')
+                else:
+                    f = Following(name=name, tel=tel, company=company, status=status)
+                    db.session.add(f)
+                    flash('添加成功', 'crm')
+                db.session.commit()
+                return redirect(url_for('crm.add_following'))
+            else:
+                flash('手机号码不正确', 'crm')
+        else:
+            flash('信息不完整，请检查是否填写完整')
+        return redirect(
+            url_for(
+                'crm.add_following',
+                name=name,
+                tel=tel,
+                company=company,
+                status=status,
+                is_update=is_update,
+            )
+        )
+    else:
+        is_update = request.args.get('is_update', False)
+        name = request.args.get('name', '')
+        fid = request.args.get('id')
+        company = request.args.get('company', '')
+        tel = request.args.get('tel', '')
+        status = request.args.get('status', 1)
+
+    return render_template(
+        'add-following.html',
+        choices=FollowStatusChoices,
+        active=2,
+        id=fid,
+        is_update=is_update,
+        name=name,
+        company=company,
+        tel=tel,
+        status=status,
+        username=current_user.name,
+    )
+
+
+@crm_app.route('/following-list', methods=['GET'])
+@login_required
+def following_list():
+    criteria = request.args.get('filter')
+    ctx = Following.query
+    if criteria:
+        ctx = ctx.filter(or_(
+            Following.company.like(f'%{criteria}%'),
+            Following.name.like(f'%{criteria}%'),
+            Following.tel.like(f'%{criteria}%'),
+        ))
+    return render_template(
+        'following-list.html',
+        following=ctx.order_by(desc('created_at')).all(),
+        active=3,
+        filter=criteria,
+        username=current_user.name,
+    )
+
+
+@crm_app.route('/memo', methods=['GET'])
+@login_required
+def memo():
+    return 'memo'
 # crm blueprint end
 
 

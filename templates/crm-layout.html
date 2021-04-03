@@ -2,16 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CRM {% block title %}{% endblock  %}</title>
     <link href="https://cdn.bootcdn.net/ajax/libs/bulma/0.9.2/css/bulma.min.css" rel="stylesheet">
 </head>
 <body>
 <header class="columns">
     <div class="column is-fullhd has-background-link-dark has-text-white has-text-centered has-size-3 has-text-weight-bold">
-        Simple CRM
+            <p>Simple CRM</p>
     </div>
 </header>
 <div class="container">
+    <div class="panel">
+        <p class="panel-heading">
+            客户跟进管理器
+        </p>
+        <p class="panel-tabs">
+            <a {% if active == 1 %}class="is-active"{% endif %} href="{{ '#' }}">主页</a>
+            <a {% if active == 2 %}class="is-active"{% endif %} href="{{ url_for('crm.add_following') }}">添加记录</a>
+            <a {% if active == 3 %}class="is-active"{% endif %} href="{{ url_for('crm.following_list') }}">查看记录</a>
+            <a {% if active == 4 %}class="is-active"{% endif %} href="{{ '#' }}">公告板</a>
+            <a href="{{ url_for('auth.logout') }}">退出{{ username or '' }}</a>
+        </p>
+    </div>
     {% block content %}
     {% endblock %}
 </div>

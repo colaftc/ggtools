@@ -1,14 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<form method="post">
-    <input type="text" name="name">
-    <input type="tel" name="tel">
-    <input type="submit" value="登录">
-</form>
-</body>
-</html>
+{% extends "crm-layout.html" %}
+{% block title %}
+    登录
+{% endblock %}
+
+{% block content %}
+    <div class="container is-12">
+    {% for m in get_flashed_messages('auth') %}
+        <article class="message is-warning">
+            <div class="message-header">
+                <p>消息</p>
+            </div>
+            <div class="message-body">
+                {{ m.1}}
+            </div>
+        </article>
+    {% endfor %}
+    </div>
+    <form method="post" class="container">
+        <div class="control" style="padding: 10px;">
+            <input type="text" name="name" class="input block" placeholder="用户名">
+            <input type="tel" name="tel" class="input block" placeholder="手机号码">
+            <input type="submit" value="登录" class="button block is-primary">
+        </div>
+    </form>
+    <script>
+        function removeMessage() {
+            setTimeout(() => {
+                let articles = document.querySelector('article')
+                if(articles){
+                    articles.remove()
+                }
+            }, 5000)
+        }
+        document.body.onload = removeMessage
+    </script>
+{% endblock %}
