@@ -69,6 +69,7 @@ def add_following():
                     flash('更新成功', 'crm')
                 else:
                     f = Following(name=name, tel=tel, company=company, status=status)
+                    f.follower_id = current_user.id
                     db.session.add(f)
                     flash('添加成功', 'crm')
                 db.session.commit()
@@ -113,7 +114,7 @@ def add_following():
 @login_required
 def following_list():
     criteria = request.args.get('filter')
-    ctx = Following.query
+    ctx = Following.query.filter_by(follower_id=current_user.id)
     if criteria:
         ctx = ctx.filter(or_(
             Following.company.like(f'%{criteria}%'),

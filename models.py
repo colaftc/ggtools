@@ -45,6 +45,8 @@ class Following(db.Model):
     name = db.Column(db.String(100))
     company = db.Column(db.String(100))
     tel = db.Column(db.String(20))
+    follower_id = db.Column(db.Integer(), db.ForeignKey('seller.id'))
+    follower = db.relationship('Seller', backref=db.backref('follows'), lazy='dynamic', uselist=True)
     status = db.Column(ChoiceType(FollowStatusChoices))
     created_at = db.Column(db.DateTime, default=datetime.datetime.now, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now, comment='更新时间')
