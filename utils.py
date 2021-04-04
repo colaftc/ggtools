@@ -6,11 +6,13 @@ from collections import namedtuple
 from openpyxl import load_workbook
 import json
 import os
+import datetime
 
 # tencent cloud sdk
 from tencentcloud.common import credential
 from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
 from tencentcloud.sms.v20190711 import sms_client, models
+from models import Seller, Following, FollowStatusChoices, db
 
 
 SentClient = namedtuple('SentClient', ['name', 'tel', 'address', 'industry', 'company'])
@@ -77,6 +79,14 @@ def prepare_send_sms(sdk_id: str, template_id='881535', sign: str = '浩轩陈�
     req.TemplateID = template_id
     return req
 
+
+def waiting_follow_notify(seller_id: int, status: FollowStatusChoices, config):
+    """
+    :return: 返回seller关联的指定状态的需要提醒跟进的记录
+    """
+    days_ago = datetime.datetime.now() - datetime.timedelta(days=config[status])
+    result = Following.query.filter_by(status=status).filter_by(follower_id=seller_id)
+    return result.filter(Following.updated_at < days_ago)
 
 def send_sms(numbers: List[str], req: models.SendSmsRequest, cred: credential.Credential):
     client = sms_client.SmsClient(cred, 'ap-guangzhou')

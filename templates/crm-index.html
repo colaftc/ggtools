@@ -1,0 +1,185 @@
+{% extends "crm-layout.html" %}
+{% block title %}
+    看板
+{% endblock %}
+
+{% block panel_heading %}
+    [{{ today }}]今日待跟进客户
+{% endblock %}
+
+{% block content %}
+    <div class="panel is-danger">
+        <div class="panel-heading" onclick="hideBrother(this)">
+            {{ sent_notify.0 }}条需要回访 - 已寄样板客户
+        </div>
+        <div class="panel-block" style="display: none;">
+            <div class="container">
+            {% for f in sent_notify.1 %}
+                <div class="card block">
+                    <div class="card-header">
+                        <p class="is-6">{{ f.company or '未指定公司名' }}</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <p class="subtitle" style="width: 70px;font-size:1.5em;line-height: 1.4em;
+                                        height: 70px; background-color: gray;padding: 3px 0 0 10px;
+                                        color: white; display: flex; flex-direction: row;
+                                ">{{ f.status.value }}</p>
+                            </div>
+                            <div class="media-content">
+                                <p>称呼：{{ f.name }}</p>
+                                <p>电话：{{ f.tel }}</p>
+                                <p class="is-flex is-flex-direction-column">
+                                    <text class="is-size-7">创建时间：{{ f.created_at }}</text>
+                                    <text class="is-size-7">最后更新：{{ f.updated_at }}</text>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True) }}">编辑</a>
+                        <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card has-text-centered">无数据</div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- part -->
+    <div class="panel is-danger">
+        <div class="panel-heading" onclick="hideBrother(this)">
+            {{ bought_notify.0 }}条需要回访 - 成交客户
+        </div>
+        <div class="panel-block" style="display: none;">
+            <div class="container">
+            {% for f in bought_notify.1 %}
+                <div class="card block">
+                    <div class="card-header">
+                        <p class="is-6">{{ f.company or '未指定公司名' }}</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <p class="subtitle" style="width: 70px;font-size:1.5em;line-height: 1.4em;
+                                        height: 70px; background-color: gray;padding: 3px 0 0 10px;
+                                        color: white; display: flex; flex-direction: row;
+                                ">{{ f.status.value }}</p>
+                            </div>
+                            <div class="media-content">
+                                <p>称呼：{{ f.name }}</p>
+                                <p>电话：{{ f.tel }}</p>
+                                <p class="is-flex is-flex-direction-column">
+                                    <text class="is-size-7">创建时间：{{ f.created_at }}</text>
+                                    <text class="is-size-7">最后更新：{{ f.updated_at }}</text>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True) }}">编辑</a>
+                        <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card has-text-centered">无数据</div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- part -->
+    <div class="panel is-danger">
+        <div class="panel-heading" onclick="hideBrother(this)">
+            {{ wechat_notify.0 }}条需要回访 - 已加客户
+        </div>
+        <div class="panel-block" style="display: none;">
+            <div class="container">
+            {% for f in wechat_notify.1 %}
+                <div class="card block">
+                    <div class="card-header">
+                        <p class="is-6">{{ f.company or '未指定公司名' }}</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <p class="subtitle" style="width: 70px;font-size:1.5em;line-height: 1.4em;
+                                        height: 70px; background-color: gray;padding: 3px 0 0 10px;
+                                        color: white; display: flex; flex-direction: row;
+                                ">{{ f.status.value }}</p>
+                            </div>
+                            <div class="media-content">
+                                <p>称呼：{{ f.name }}</p>
+                                <p>电话：{{ f.tel }}</p>
+                                <p class="is-flex is-flex-direction-column">
+                                    <text class="is-size-7">创建时间：{{ f.created_at }}</text>
+                                    <text class="is-size-7">最后更新：{{ f.updated_at }}</text>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True) }}">编辑</a>
+                        <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card has-text-centered">无数据</div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- part -->
+    <div class="panel is-danger">
+        <div class="panel-heading" onclick="hideBrother(this)">
+            {{ talking_notify.0 }}条需要回访 - 初步沟通客户
+        </div>
+        <div class="panel-block" style="display: none;">
+            <div class="container">
+            {% for f in talking_notify.1 %}
+                <div class="card block">
+                    <div class="card-header">
+                        <p class="is-6">{{ f.company or '未指定公司名' }}</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <p class="subtitle" style="width: 70px;font-size:1.5em;line-height: 1.4em;
+                                        height: 70px; background-color: gray;padding: 3px 0 0 10px;
+                                        color: white; display: flex; flex-direction: row;
+                                ">{{ f.status.value }}</p>
+                            </div>
+                            <div class="media-content">
+                                <p>称呼：{{ f.name }}</p>
+                                <p>电话：{{ f.tel }}</p>
+                                <p class="is-flex is-flex-direction-column">
+                                    <text class="is-size-7">创建时间：{{ f.created_at }}</text>
+                                    <text class="is-size-7">最后更新：{{ f.updated_at }}</text>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True) }}">编辑</a>
+                        <a class="card-footer-item" href="{{ url_for('crm.mock_update', id=f.id) }}">下次提醒</a>
+                        <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card has-text-centered">无数据</div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- end of content -->
+    <script>
+        function hideBrother(self){
+            self.nextElementSibling.style.display = (self.nextElementSibling.style.display == 'none') ? 'block' : 'none'
+        }
+    </script>
+{% endblock %}

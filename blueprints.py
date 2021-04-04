@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, current_app, flash, abort, redirect, url_for
-from utils import parse_client_list, send_sms, prepare_send_sms
+from utils import parse_client_list, send_sms, prepare_send_sms, waiting_follow_notify
 from models import db, ClientInfo, Seller, Following, FollowStatusChoices
 from flask_login import login_required, login_user, logout_user, current_user, login_url
 from sqlalchemy import or_, desc
 from flask_restful import Api, reqparse, Resource, marshal_with, fields
+from datetime import datetime
 import json
 import pymysql
 import re
@@ -43,7 +44,37 @@ crm_app = Blueprint('crm', import_name='crm', url_prefix='/crm')
 @crm_app.route('/index', methods=['GET'])
 @login_required
 def index():
-    return 'crm index'
+    talking_notify_follows = waiting_follow_notify(
+        current_user.id,
+        FollowStatusChoices.Talking,
+        current_app.config['NOTIFY_DAYS']
+    )
+    got_wechat_notify_follows = waiting_follow_notify(
+        current_user.id,
+        FollowStatusChoices.Got_wechat,
+        current_app.config['NOTIFY_DAYS']
+    )
+    sent_sample_notify_follows = waiting_follow_notify(
+        current_user.id,
+        FollowStatusChoices.Sent_sample,
+        current_app.config['NOTIFY_DAYS']
+    )
+    bought_notify_follows = waiting_follow_notify(
+        current_user.id,
+        FollowStatusChoices.Bought,
+        current_app.config['NOTIFY_DAYS']
+    )
+
+    return render_template(
+        'crm-index.html',
+        active=1,
+        today=datetime.today().date(),
+        username=current_user.name,
+        bought_notify=(bought_notify_follows.count(), bought_notify_follows.all()),
+        sent_notify=(sent_sample_notify_follows.count(), sent_sample_notify_follows.all()),
+        talking_notify=(talking_notify_follows.count(), talking_notify_follows.all()),
+        wechat_notify=(got_wechat_notify_follows.count(), got_wechat_notify_follows.all()),
+    )
 
 
 @crm_app.route('/add-following', methods=['GET', 'POST'])
@@ -121,13 +152,27 @@ def following_list():
             Following.name.like(f'%{criteria}%'),
             Following.tel.like(f'%{criteria}%'),
         ))
+    ctx = ctx.order_by(desc('created_at'))
+    ctx.all()
     return render_template(
         'following-list.html',
-        following=ctx.order_by(desc('created_at')).all(),
+        following=ctx.all(),
+        count=ctx.count(),
         active=3,
         filter=criteria,
         username=current_user.name,
     )
+
+
+@crm_app.route('mock-update', methods=['GET'])
+@login_required
+def mock_update():
+    fid = request.args.get('id')
+    if not fid:
+        return '', 400
+    Following.query.filter_by(id=fid).update({})
+    db.session.commit()
+    return '', 201
 
 
 @crm_app.route('/memo', methods=['GET'])

@@ -37,7 +37,8 @@ class FollowStatusChoices(Enum):
     Talking ='初步交流'
     Got_wechat = '已加微信'
     Sent_sample = '已发样板'
-    Bought = '已成交'
+    Bought = '成交客户'
+    Giveup = '放弃跟进'
 
 
 class Following(db.Model):

@@ -79,6 +79,15 @@ flask_app.config['MAIL_USERNAME'] = 'colaftc'
 flask_app.config['MAIL_PASSWORD'] = 'QKRIUAMMLHGGYEGB'
 flask_app.config['MAIL_DEFAULT_SENDER'] = 'colaftc@126.com'
 
+# crm提醒功能参数
+from models import FollowStatusChoices
+flask_app.config['NOTIFY_DAYS'] = {
+    FollowStatusChoices.Talking: 1,
+    FollowStatusChoices.Got_wechat: 2,
+    FollowStatusChoices.Sent_sample: 4,
+    FollowStatusChoices.Bought: 7,
+}
+
 # 限流字典
 flask_app.ip_map = dict()
 
@@ -128,6 +137,7 @@ g_no_check_list = [
     '/crm/index',
     '/crm/memo',
     '/crm/add-following',
+    '/crm/mock-update',
     '/crm/following-list',
 ]
 

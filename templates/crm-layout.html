@@ -13,12 +13,12 @@
     </div>
 </header>
 <div class="container">
-    <div class="panel">
+    <div class="panel is-info">
         <p class="panel-heading">
-            客户跟进管理器
+            {% block panel_heading %}客户跟进管理器{% endblock %}
         </p>
         <p class="panel-tabs">
-            <a {% if active == 1 %}class="is-active"{% endif %} href="{{ '#' }}">主页</a>
+            <a {% if active == 1 %}class="is-active"{% endif %} href="{{ url_for('crm.index') }}">主页</a>
             <a {% if active == 2 %}class="is-active"{% endif %} href="{{ url_for('crm.add_following') }}">添加记录</a>
             <a {% if active == 3 %}class="is-active"{% endif %} href="{{ url_for('crm.following_list') }}">查看记录</a>
             <a {% if active == 4 %}class="is-active"{% endif %} href="{{ '#' }}">公告板</a>
