@@ -38,6 +38,13 @@
             </div>
 
             <div class="field">
+                <label class="label" for="address">客户地址</label>
+                <div class="control">
+                    <input type="text" name="address" class="input" placeholder="客户地址" value="{{ address }}">
+                </div>
+            </div>
+
+            <div class="field">
                 <label class="label">跟进状态</label>
                 <div class="control">
                     <div class="select">
@@ -49,6 +56,27 @@
                     </div>
                 </div>
             </div>
+
+            <div class="field">
+                <label class="label">标签</label>
+                <div class="control">
+                    <div class="select is-multiple">
+                        <select name="tags" multiple="multiple">
+                            {% for t in tags %}
+                                <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="markup">备注</label>
+                <div class="control">
+                    <input type="text" name="markup" class="input" placeholder="备注" value="{{ markup }}">
+                </div>
+            </div>
+
             <input type="hidden" name="id" value="{{ id or '' }}">
             <input type="hidden" name="is_update" value="{{ is_update or False }}">
             <input type="submit" value="{% if is_update %}更新{% else %}提交{% endif %}" class="button is-primary">

@@ -13,10 +13,11 @@ from blueprints import sms_app, auth_app, crm_app
 from utils import SentClient, init_credential, parse_client_list
 from flask_pymongo import PyMongo
 from threading import Timer
-from models import db, ClientInfo, Seller
+from models import db, ClientInfo, Seller, Tag, Following
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from flask_login import LoginManager
+import flask_excel as excel
 import os
 import re
 
@@ -99,6 +100,7 @@ flask_app.register_blueprint(crm_app)
 # 初始化各种
 manager = Manager(flask_app)
 db.init_app(flask_app)
+excel.init_excel(flask_app)
 migrate = Migrate(flask_app, db)
 manager.add_command('db', MigrateCommand)
 celery = Celery(flask_app.name, broker=flask_app.config['CELERY_BROKER_URL'])
@@ -118,7 +120,14 @@ def user_loader(user_id):
 
 @manager.shell
 def make_shell_context():
-    return dict(app=flask_app, db=db, ClientInfo=ClientInfo, Seller=Seller)
+    return dict(
+        app=flask_app,
+        db=db,
+        ClientInfo=ClientInfo,
+        Seller=Seller,
+        Following=Following,
+        Tag=Tag,
+    )
 
 
 # a clousure for get tx credential singleton global

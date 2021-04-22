@@ -14,7 +14,13 @@
             </form>
         </div>
     </div>
-    <div class="panel-block">全部跟进记录列表 : 共{{ count }}条</div>
+    <div class="panel-block">
+        全部跟进记录列表 : 共{{ count }}条 &nbsp;
+        <a class="button ml-3" href="{{ url_for('crm.following_list') }}">全部</a>
+        <a class="button" href="{{ url_for('crm.following_list', download=True) }}">已下载</a>
+        <a class="button" href="{{ url_for('crm.following_list', download=False) }}">未下载</a>
+        <a class="ml-5" href="{{ url_for('crm.download') }}">下载全部未下载过的客户</a>
+    </div>
     <div class="panel-block">
         <div class="container">
         {% for f in following %}
@@ -33,7 +39,15 @@
                         <div class="media-content">
                             <p>称呼：{{ f.name }}</p>
                             <p>电话：{{ f.tel }}</p>
+                            <p>地址：{{ f.address }}</p>
+                            <p>
+                                {% for t in f.tags %}
+                                    <span class="tag is-info">{{ t.name }}</span>
+                                {% endfor %}
+                            </p>
                             <p class="is-flex is-flex-direction-column">
+                                <text class="is-size-7">备注：{{ f.markup }}</text>
+                                <text class="is-size-7">已下载：{{ f.download}}</text>
                                 <text class="is-size-7">创建时间：{{ f.created_at }}</text>
                                 <text class="is-size-7">最后更新：{{ f.updated_at }}</text>
                             </p>
@@ -41,7 +55,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True) }}">编辑</a>
+                    <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True, tags=f.tags) }}">编辑</a>
                     <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
                 </div>
             </div>

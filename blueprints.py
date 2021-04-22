@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, current_app, flash, abort, redirect, url_for
 from utils import parse_client_list, send_sms, prepare_send_sms, waiting_follow_notify
-from models import db, ClientInfo, Seller, Following, FollowStatusChoices
+from models import db, ClientInfo, Seller, Following, FollowStatusChoices, Tag
 from flask_login import login_required, login_user, logout_user, current_user, login_url
 from sqlalchemy import or_, desc
 from flask_restful import Api, reqparse, Resource, marshal_with, fields
@@ -80,26 +80,46 @@ def index():
 @crm_app.route('/add-following', methods=['GET', 'POST'])
 @login_required
 def add_following():
+    tag_list = [{
+        'id': t.id,
+        'name': t.name,
+    } for t in Tag.query.all()]
+
     if request.method == 'POST':
         name = request.form.get('name')
         tel = request.form.get('tel')
         company = request.form.get('company')
         status = request.form.get('status')
         fid = request.form.get('id')
+        markup = request.form.get('markup', '')
+        address = request.form.get('address', '')
+        tags = request.form.getlist('tags')
         is_update = request.form.get('is_update', False)
 
         if name and company:
             if tel and re.match('^\d{11}$', tel):
+                tags = Tag.query.filter(Tag.id.in_(tags)).all()
                 if is_update and fid:
-                    Following.query.filter_by(id=fid).update({
-                        'name': name,
-                        'company': company,
-                        'tel': tel,
-                        'status': status
-                    })
+                    f = Following.query.get_or_404(fid)
+                    f.name = name
+                    f.tel = tel
+                    f.company = company
+                    f.status = status
+                    f.markup = markup
+                    f.address = address
+                    f.tags = tags
+                    db.session.add(f)
                     flash('更新成功', 'crm')
                 else:
-                    f = Following(name=name, tel=tel, company=company, status=status)
+                    f = Following(
+                        name=name,
+                        tel=tel,
+                        company=company,
+                        status=status,
+                        markup=markup,
+                        address=address,
+                        tags=tags,
+                    )
                     f.follower_id = current_user.id
                     db.session.add(f)
                     flash('添加成功', 'crm')
@@ -116,6 +136,9 @@ def add_following():
                 tel=tel,
                 company=company,
                 status=status,
+                address=address,
+                markup=markup,
+                tags=tag_list,
                 is_update=is_update,
             )
         )
@@ -125,7 +148,9 @@ def add_following():
         fid = request.args.get('id')
         company = request.args.get('company', '')
         tel = request.args.get('tel', '')
+        address = request.args.get('address', '')
         status = request.args.get('status', 1)
+        markup = request.args.get('markup', '')
 
     return render_template(
         'add-following.html',
@@ -135,23 +160,34 @@ def add_following():
         is_update=is_update,
         name=name,
         company=company,
+        address=address,
         tel=tel,
         status=status,
+        tags=tag_list,
+        markup=markup,
         username=current_user.name,
     )
 
 
 @crm_app.route('/following-list', methods=['GET'])
+@crm_app.route('/following-list/has-downloaded/<int:download>', methods=['GET'])
 @login_required
-def following_list():
+def following_list(download: int = 2):
     criteria = request.args.get('filter')
     ctx = Following.query.filter_by(follower_id=current_user.id)
+
+    if download == 0:
+        ctx = ctx.filter_by(download=False)
+    elif download == 1:
+        ctx = ctx.filter_by(download=True)
+
     if criteria:
         ctx = ctx.filter(or_(
             Following.company.like(f'%{criteria}%'),
             Following.name.like(f'%{criteria}%'),
             Following.tel.like(f'%{criteria}%'),
         ))
+
     ctx = ctx.order_by(desc('created_at'))
     ctx.all()
     return render_template(
@@ -162,6 +198,36 @@ def following_list():
         filter=criteria,
         username=current_user.name,
     )
+
+
+@crm_app.route('/download', methods=['GET'])
+@crm_app.route('/download/has-downloaded/<int:downloaded>', methods=['GET'])
+@login_required
+def download(downloaded: int = 0):
+    from app import excel
+    downloaded = downloaded == 1
+    qs = Following.query.filter_by(download=downloaded)
+    resp = excel.make_response_from_array(
+        [(
+            v.name,
+            v.company,
+            v.tel,
+            v.address,
+            v.status.value,
+            v.markup if v.markup else '无备注',
+            [t.name for t in v.tags],
+        ) for v in qs.all()],
+        file_type='csv',
+        file_name='客户列表.csv',
+    )
+
+    if not downloaded:
+        Following.query.filter_by(download=downloaded).update({
+            'download': True,
+        })
+        db.session.commit()
+
+    return resp
 
 
 @crm_app.route('mock-update', methods=['GET'])
