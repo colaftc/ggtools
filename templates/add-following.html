@@ -63,7 +63,7 @@
                     <div class="select is-multiple">
                         <select name="tags" multiple="multiple">
                             {% for t in tags %}
-                                <option value="{{ t.id }}">{{ t.name }}</option>
+                                <option value="{{ t.id }}" {% if t.name in curr_tags %} selected="selected" {% endif %}>{{ t.name }}</option>
                             {% endfor %}
                         </select>
                     </div>

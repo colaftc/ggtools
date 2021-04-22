@@ -4,6 +4,20 @@
 {% endblock %}
 {% block content %}
     <div class="panel-block">
+        <div class="container">
+        {% for m in get_flashed_messages('crm') %}
+            <article class="message is-warning">
+                <div class="message-header">
+                    <p>消息</p>
+                </div>
+                <div class="message-body">
+                    {{ m.1}}
+                </div>
+            </article>
+        {% endfor %}
+        </div>
+    </div>
+    <div class="panel-block">
         <div class="control has-icons-left">
             <form method="get" class="is-flex is-flex-direction-row">
                 <input class="input" type="text" placeholder="搜索" name="filter" value="{{ filter or '' }}">
@@ -64,8 +78,8 @@
                         status=f.status.value,
                         markup=f.markup,
                         address=f.address,
+                        curr_tags=f.tags,
                         is_update=True,
-                        tags=f.tags
                     ) }}">编辑</a>
                     <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
                 </div>
@@ -75,4 +89,15 @@
         {% endfor %}
         </div>
     </div>
+    <script>
+        function removeMessage() {
+            setTimeout(() => {
+                let articles = document.querySelector('article')
+                if(articles){
+                    articles.remove()
+                }
+            }, 5000)
+        }
+        document.body.onload = removeMessage
+    </script>
 {% endblock %}

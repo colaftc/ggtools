@@ -124,7 +124,7 @@ def add_following():
                     db.session.add(f)
                     flash('添加成功', 'crm')
                 db.session.commit()
-                return redirect(url_for('crm.add_following'))
+                return redirect(url_for('crm.following_list'))
             else:
                 flash('手机号码不正确', 'crm')
         else:
@@ -151,6 +151,7 @@ def add_following():
         address = request.args.get('address', '')
         status = request.args.get('status', 1)
         markup = request.args.get('markup', '')
+        curr_tags = request.args.getlist('curr_tags')
 
     return render_template(
         'add-following.html',
@@ -164,6 +165,7 @@ def add_following():
         tel=tel,
         status=status,
         tags=tag_list,
+        curr_tags=[t for t in curr_tags],
         markup=markup,
         username=current_user.name,
     )
