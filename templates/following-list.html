@@ -55,7 +55,18 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a class="card-footer-item" href="{{ url_for('crm.add_following', id=f.id, name=f.name, tel=f.tel, company=f.company, status=f.status.value, is_update=True, tags=f.tags) }}">编辑</a>
+                    <a class="card-footer-item" href="{{ url_for(
+                        'crm.add_following',
+                        id=f.id,
+                        name=f.name,
+                        tel=f.tel,
+                        company=f.company,
+                        status=f.status.value,
+                        markup=f.markup,
+                        address=f.address,
+                        is_update=True,
+                        tags=f.tags
+                    ) }}">编辑</a>
                     <a class="card-footer-item" href="#" onclick="alert('该功能暂不开放')">作废</a>
                 </div>
             </div>
