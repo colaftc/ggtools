@@ -21,7 +21,7 @@
             <a {% if active == 1 %}class="is-active"{% endif %} href="{{ url_for('crm.index') }}">主页</a>
             <a {% if active == 2 %}class="is-active"{% endif %} href="{{ url_for('crm.add_following') }}">添加记录</a>
             <a {% if active == 3 %}class="is-active"{% endif %} href="{{ url_for('crm.following_list') }}">查看记录</a>
-            <a {% if active == 4 %}class="is-active"{% endif %} href="{{ '#' }}">公告板</a>
+            <a {% if active == 4 %}class="is-active"{% endif %} href="{{ url_for('sms.client_info') }}">客户池</a>
             <a href="{{ url_for('auth.logout') }}">退出{{ username or '' }}</a>
         </p>
     </div>

@@ -91,6 +91,7 @@
                     <th>联系人</th>
                     <th>手机</th>
                     <th>地址</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -102,6 +103,7 @@
                     <td>{{ c.name }}</td>
                     <td>{{ c.tel }}</td>
                     <td>{{ c.address }}</td>
+                    <td><a href="{{ url_for('crm.add_following', name=c.name, tel=c.tel, company=c.company, address=c.address) }}">跟进</a></td>
                 </tr>
             {% endfor %}
             </tbody>
