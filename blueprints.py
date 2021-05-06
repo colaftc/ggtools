@@ -258,19 +258,78 @@ client_info_fields = {
     'name': fields.String(),
     'tel': fields.String(),
     'company': fields.String(),
-    'industry': fields.String(),
     'address': fields.String(),
 }
+
+api_token_args = reqparse.RequestParser()
+api_token_args.add_argument(
+    'secret',
+    type=str,
+    location=('headers', 'form', 'args'),
+    required=True,
+    default=None,
+)
+client_post_args = reqparse.RequestParser()
+client_api_arg_props = {
+    'type': str,
+    'location': ('form', ),
+    'required': True,
+    'default': None,
+}
+client_post_args.add_argument(
+    'name',
+    **client_api_arg_props,
+)
+client_post_args.add_argument(
+    'company',
+    **client_api_arg_props,
+)
+client_post_args.add_argument(
+    'tel',
+    **client_api_arg_props,
+)
+client_post_args.add_argument(
+    'address',
+    **client_api_arg_props,
+)
 
 
 class ClientInfoResource(Resource):
     @marshal_with(client_info_fields)
     def get(self, client_id=None):
+        args = api_token_args.parse_args()
+        secret = args['secret']
+        if secret != 'ggadmin5197':
+            abort(401)
+
         if client_id:
             result = ClientInfo.query.get(client_id)
             if not result:
                 abort(404)
         return ClientInfo.query.all()
+
+    @marshal_with(client_info_fields)
+    def post(self):
+        secret = api_token_args.parse_args().get('secret')
+        args = client_post_args.parse_args()
+
+        if secret != 'ggadmin5197':
+            abort(403)
+
+        data = ClientInfo(
+            name=args['name'],
+            company=args['company'],
+            tel=args['tel'],
+            address=args['address'],
+        )
+
+        try:
+            db.session.add(data)
+            db.session.commit()
+        except Exception as e:
+            return None
+
+        return data
 
 
 api.add_resource(ClientInfoResource, '/api/client-info', '/api/client-info/<int:client_id>')

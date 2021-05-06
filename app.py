@@ -148,6 +148,7 @@ g_no_check_list = [
     '/crm/add-following',
     '/crm/mock-update',
     '/crm/following-list',
+    '/sms/api/client-info',
 ]
 
 
