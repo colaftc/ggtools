@@ -22,10 +22,10 @@
         }
         tbody tr{
             height: 35px;
+			color: gray;
         }
         tbody tr:nth-child(odd){
             background-color: WhiteSmoke ;
-            color: white;
         }
         .pager{
             padding-bottom: 200px;
@@ -99,11 +99,11 @@
                 <tr>
                     <td>{{ c.id }}</td>
                     <td>{{ c.industry }}</td>
-                    <td>{{ c.company }}</td>
-                    <td>{{ c.name }}</td>
-                    <td>{{ c.tel }}</td>
-                    <td>{{ c.address }}</td>
-                    <td><a href="{{ url_for('crm.add_following', name=c.name, tel=c.tel, company=c.company, address=c.address) }}">跟进</a></td>
+                    <td style="max-width:200px;">{{ c.company }}</td>
+                    <td style="max-width:300px;">{{ c.name }}</td>
+                    <td style="max-width:150px;">{{ c.tel }}</td>
+                    <td style="max-width:300px;">{{ c.address }}</td>
+                    <td style="min-width:50px;"><a href="{{ url_for('crm.add_following', name=c.name, tel=c.tel, company=c.company, address=c.address) }}">跟进</a></td>
                 </tr>
             {% endfor %}
             </tbody>
