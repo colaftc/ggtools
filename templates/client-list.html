@@ -80,6 +80,7 @@
             <input placeholder="指定地区" name="province" value="{{ filters.0 if filters.0 else '' }}">
             <input placeholder="模糊搜索企业名" name="company" value="{{ filters.1 if filters.1 else '' }}">
             <button type="submit" style="padding: 0 5px;">查询</button>
+            <a href="{{ url_for('sms.client_info', page=p, province=filters.0, company=filters.1, json=1) }}">获取本页json</a>
         </form>
 
         <table>

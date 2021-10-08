@@ -341,6 +341,13 @@ paginate_args.add_argument(
     required=False,
     default=1,
 )
+paginate_args.add_argument(
+    'json'
+    type=int,
+    location=['args', 'form'],
+    required=False,
+    default=0,
+)
 filter_args = reqparse.RequestParser()
 filter_args.add_argument(
     'province',
@@ -363,6 +370,8 @@ def client_info(area: str = None):
     args = paginate_args.parse_args()
     page = args['page']
     page_size = int(request.cookies.get('page_size', 200))
+
+    want_json = args['json']
 
     filters = filter_args.parse_args()
     province = filters['province']
@@ -389,14 +398,18 @@ def client_info(area: str = None):
 
     if not result:
         abort(404)
-    return render_template(
-        'client-list.html',
-        client_list=result.paginate(page, page_size),
-        page=page,
-        page_size=page_size,
-        count=record_count,
-        filters=[province, company],
-    )
+
+    if want_json:
+        return jsonify(result)
+    else:
+        return render_template(
+            'client-list.html',
+            client_list=result.paginate(page, page_size),
+            page=page,
+            page_size=page_size,
+            count=record_count,
+            filters=[province, company],
+        )
 
 
 @sms_app.route('/test', methods=['GET', 'POST'])
